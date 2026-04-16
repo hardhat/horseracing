@@ -329,6 +329,64 @@ void draw_text_pixel_offset(uint16_t offset, uint8_t color)
     text_tiles[offset] = color;
 }
 
+void draw_text_char_aligned(const uint8_t *charpattern, uint8_t *target, uint8_t color)
+{
+    (void)charpattern;
+    (void)target;
+    (void)color;
+#if 1
+__asm
+    ; __naked keeps SDCC from emitting a prologue/epilogue around this block.
+    ; HL is charpattern, DE is target, and color is the next byte on the stack.
+    push ix
+    ld ix,#0
+    add ix,sp
+    ld c,4(ix)
+
+    ex de,hl
+    ld b,#8
+_dtca_outer_loop$:
+    push bc
+    ld a,(de)
+    ld b,#8
+_dtca_inner_loop$:
+    rlca
+    jr nc,_dtca_next$
+    ld (hl),c
+_dtca_next$:
+    inc hl
+    djnz _dtca_inner_loop$
+    push de
+    ld de,#8
+    add hl,de
+    pop de
+    inc de
+    pop bc
+    djnz _dtca_outer_loop$
+    pop ix
+    pop hl
+    inc sp
+    jp (hl)
+    ; push hl
+    ; ret
+__endasm;
+#else
+    for(uint8_t j=0;j<8;j++)
+    {
+        uint8_t mask=0x80;
+        uint8_t pat=charpattern[j]; // get the pixel pattern
+        for(uint8_t i=0;i<8;i++)
+        {
+            if(pat & mask)
+                *target=color;
+            target++;
+            mask>>=1;
+        }
+        target+=8; // 8 to move to the next line
+    }
+#endif
+}
+
 void draw_text_char(uint16_t x, uint8_t y, uint8_t c, uint8_t color)
 {
     if(((x&15)>8) || ((y&15)>8)) {
@@ -347,6 +405,7 @@ void draw_text_char(uint16_t x, uint8_t y, uint8_t c, uint8_t color)
         // Save some computation on the common case of aligned text by precomputing the offset and only checking tile bounds once.
         uint16_t offset = ((x>>4)<<8)+(y<<4)+(x&0x0F);
         const uint8_t *ptr = font+((c-32)<<3);
+#if 0
         for(uint8_t j=0;j<8;j++)
         {
             uint8_t mask=0x80;
@@ -361,6 +420,9 @@ void draw_text_char(uint16_t x, uint8_t y, uint8_t c, uint8_t color)
             ptr++;
             offset+=8;
         }
+#else
+        draw_text_char_aligned(ptr, &text_tiles[offset], color);
+#endif
     }
 }
 
