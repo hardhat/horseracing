@@ -1,7 +1,7 @@
 ZOS_PATH ?= ../Zeal-8-bit-OS
 ZVB_SDK_PATH ?= ../Zeal-VideoBoard-SDK
 BIN=bin/horser.bin
-OBJ=obj/main.rel obj/game.rel obj/menu.rel obj/dat.rel obj/controller.rel
+OBJ=obj/main.rel obj/game.rel obj/menu.rel obj/dat.rel obj/controller.rel obj/textaccel.rel
 IMG=img/title.zts img/map.zts img/hud.zts img/sprites.zts
 DAT=bin/horser.dat
 CC=sdcc
