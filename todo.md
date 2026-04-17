@@ -21,9 +21,9 @@ The MVP is the smallest version that delivers the complete original game loop:
 - [x] Implement the betting sheet screen.
 - [x] Show race number, entrants, odds, distance, surface, and bettor bankrolls on the betting sheet.
 - [ ] Implement turn-based pass-and-play betting entry.
-- [ ] Implement Win bets.
+- [x] Implement Win bets.
 - [ ] Implement Exacta bets.
-- [ ] Lock in wagers and deduct bankroll immediately on confirmation.
+- [x] Lock in wagers and deduct bankroll immediately on confirmation.
 - [ ] Implement tentative odds display for the current race.
 - [ ] Adjust odds as wagers are placed.
 - [ ] Implement the past performance screen.
@@ -91,12 +91,12 @@ Build these in order. Later steps should not start until their prerequisites are
 
 #### Step 3: Betting Phase
 
-- [ ] Implement the betting sheet logic.
+- [x] Implement the betting sheet logic.
 - [ ] Implement turn-based pass-and-play wager entry.
 - [ ] Implement tentative odds generation and update odds as bets are placed.
-- [ ] Implement Win bet entry and validation.
+- [x] Implement Win bet entry and validation.
 - [ ] Implement Exacta bet entry and validation.
-- [ ] Deduct bankroll immediately when a wager is confirmed.
+- [x] Deduct bankroll immediately when a wager is confirmed.
 
 #### Step 4: Race History And Handicapping Data
 
@@ -225,12 +225,12 @@ Tasks:
 - [ ] Implement bankroll tracking with $750 starting stake.
 - [ ] Enforce the $250 max wager cap.
 - [ ] Mark busted bettors as out of the game.
-- [ ] Implement the betting sheet logic.
+- [x] Implement the betting sheet logic.
 - [x] Show race number, entrants, odds, distance, surface, and bettor bankrolls.
 - [ ] Implement pass-and-play wager entry.
-- [ ] Implement Win bets.
+- [x] Implement Win bets.
 - [ ] Implement Exacta bets.
-- [ ] Deduct bankroll immediately when a wager is confirmed.
+- [x] Deduct bankroll immediately when a wager is confirmed.
 - [ ] Implement tentative odds generation and update logic.
 
 Completion gate:

@@ -35,6 +35,14 @@ enum BetType
     BET_TYPE_EXACTA,
 };
 
+enum BettingField
+{
+    BETTING_FIELD_AMOUNT,
+    BETTING_FIELD_TYPE,
+    BETTING_FIELD_HORSE,
+    BETTING_FIELD_COUNT,
+};
+
 struct HorseTraits
 {
     uint8_t break_speed;
@@ -74,6 +82,7 @@ struct Wager
     uint8_t type;
     uint8_t first_pick;
     uint8_t second_pick;
+    uint8_t confirmed;
 };
 
 struct RaceEntry
@@ -108,6 +117,7 @@ struct SessionState
     uint8_t current_race;
     uint8_t active_bettor;
     uint8_t selected_entry;
+    uint8_t selected_field;
 };
 
 struct Game

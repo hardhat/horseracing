@@ -31,6 +31,12 @@ static const char *const surface_name[SURFACE_COUNT] = {
     "TURF",
 };
 
+static const char *const bet_type_name[] = {
+    "NONE",
+    "WIN",
+    "EXA",
+};
+
 static uint8_t text_tile_span(const char *text)
 {
     size_t len = strlen(text);
@@ -105,7 +111,119 @@ static void draw_bet_entry(uint8_t icon_tile, uint8_t marker_tile, uint8_t map_y
 
 static uint8_t selected_row_y(void)
 {
-    return (uint8_t)(7u + (game.cursor_y & 0x03u));
+    switch(game.session.selected_field) {
+        case BETTING_FIELD_AMOUNT:
+            return 4u;
+        case BETTING_FIELD_TYPE:
+            return 6u;
+        //case BETTING_FIELD_HORSE:
+        default:
+            return (uint8_t)(7u + game.session.selected_entry);
+    }
+}
+
+static void clear_confirmed_wager(struct Bettor *bettor, struct Wager *wager)
+{
+    if(wager->confirmed) {
+        bettor->bankroll = (uint16_t)(bettor->bankroll + wager->amount);
+        wager->confirmed = 0;
+    }
+}
+
+static void sync_selected_entry(void)
+{
+    game.session.selected_entry = game.session.wagers[game.session.active_bettor].first_pick;
+}
+
+static void normalize_wager(struct Wager *wager)
+{
+    if(wager->type == BET_TYPE_NONE) {
+        wager->type = BET_TYPE_WIN;
+    }
+
+    if(wager->amount < 10u) {
+        wager->amount = 10u;
+    }
+
+    if(wager->first_pick > 3u) {
+        wager->first_pick = 0;
+    }
+
+    if(wager->type == BET_TYPE_EXACTA) {
+        if(wager->second_pick > 3u) {
+            wager->second_pick = 1u;
+        }
+        if(wager->second_pick == wager->first_pick) {
+            wager->second_pick = (uint8_t)((wager->first_pick + 1u) & 0x03u);
+        }
+    } else {
+        wager->second_pick = 0;
+    }
+}
+
+static void adjust_wager_amount(struct Bettor *bettor, struct Wager *wager, int8_t delta)
+{
+    uint16_t max_amount = bettor->bankroll;
+
+    if(max_amount > 250u) {
+        max_amount = 250u;
+    }
+    if(max_amount < 10u) {
+        max_amount = 10u;
+    }
+
+    if(delta > 0) {
+        if(wager->amount + 10u > max_amount) {
+            wager->amount = max_amount;
+        } else {
+            wager->amount = (uint16_t)(wager->amount + 10u);
+        }
+    } else if(delta < 0) {
+        if(wager->amount <= 10u) {
+            wager->amount = 10u;
+        } else {
+            wager->amount = (uint16_t)(wager->amount - 10u);
+        }
+    }
+}
+
+static void cycle_wager_type(struct Wager *wager, int8_t delta)
+{
+    if(delta > 0) {
+        wager->type = (wager->type == BET_TYPE_EXACTA) ? BET_TYPE_WIN : (uint8_t)(wager->type + 1u);
+    } else if(delta < 0) {
+        wager->type = (wager->type <= BET_TYPE_WIN) ? BET_TYPE_EXACTA : (uint8_t)(wager->type - 1u);
+    }
+    normalize_wager(wager);
+}
+
+static void cycle_selected_horse(struct Wager *wager, int8_t delta)
+{
+    if(delta > 0) {
+        wager->first_pick = (uint8_t)((wager->first_pick + 1u) & 0x03u);
+    } else if(delta < 0) {
+        wager->first_pick = (uint8_t)((wager->first_pick + 3u) & 0x03u);
+    }
+    normalize_wager(wager);
+    sync_selected_entry();
+}
+
+static void commit_wager(struct Bettor *bettor, struct Wager *wager)
+{
+    uint16_t max_amount = bettor->bankroll;
+
+    if(max_amount > 250u) {
+        max_amount = 250u;
+    }
+    if(max_amount == 0u) {
+        return;
+    }
+    if(wager->amount > max_amount) {
+        wager->amount = max_amount;
+    }
+
+    bettor->bankroll = (uint16_t)(bettor->bankroll - wager->amount);
+    wager->confirmed = 1;
 }
 
 static uint8_t horse_icon_tile(uint8_t color)
@@ -147,6 +265,7 @@ static void init_test_session(void)
     game.session.current_race = 0;
     game.session.active_bettor = 0;
     game.session.selected_entry = 0;
+    game.session.selected_field = BETTING_FIELD_HORSE;
 
     game.session.bettors[0].bankroll = 750;
     game.session.bettors[0].active = 1;
@@ -167,6 +286,7 @@ static void init_test_session(void)
     game.session.wagers[0].type = BET_TYPE_WIN;
     game.session.wagers[0].first_pick = 0;
     game.session.wagers[0].second_pick = 1;
+    game.session.wagers[0].confirmed = 0;
 
     game.session.races[0].surface = SURFACE_DRY;
     game.session.races[0].distance_furlongs = 6;
@@ -188,6 +308,8 @@ static void draw_template_screen(void)
     char summary_line[32];
     char wager_line[24];
     char entry_line[16];
+    char amount_text[8];
+    const char *first_pick_name;
 
     fill_tilemap(TILE_COLOR_BLACK, 0, 0, TILES_ACROSS, TILES_DOWN);
     reset_text_tile_arena();
@@ -227,9 +349,15 @@ static void draw_template_screen(void)
         (unsigned)race->distance_furlongs,
         (unsigned)bettor->bankroll);
 
-    sprintf(wager_line, "%s %s",
-        (wager->type == BET_TYPE_EXACTA) ? "EXA" : "WIN",
-        horse_color_name[game.session.stable[wager->first_pick].color]);
+    sprintf(amount_text, "$%03u", (unsigned)wager->amount);
+    first_pick_name = horse_color_name[game.session.stable[race->entries[wager->first_pick].horse_index].color];
+
+    if(wager->type == BET_TYPE_EXACTA) {
+        const char *second_pick_name = horse_color_name[game.session.stable[race->entries[wager->second_pick].horse_index].color];
+        sprintf(wager_line, "%s %s-%s", bet_type_name[wager->type], first_pick_name, second_pick_name);
+    } else {
+        sprintf(wager_line, "%s %s %s", bet_type_name[wager->type], first_pick_name, amount_text);
+    }
 
     set_font(FONT_NICETY_BOLD);
     draw_text_pair(3, 3,
@@ -239,7 +367,7 @@ static void draw_template_screen(void)
     set_font(FONT_NICETY);
     draw_text_pair(4, 6,
         wager_line,
-        "HORSE    ODDS",
+        wager->confirmed ? "LOCKED   ODDS" : "HORSE    ODDS",
         COL_LIGHT_GRAY, COL_BLACK);
 
     for(uint8_t i = 0; i < 4; i++) {
@@ -308,18 +436,56 @@ void input_game(uint8_t key, bool down)
             break;
 
         case INPUT_UP:
-            if(game.cursor_y > 0) game.cursor_y--;
+            if(game.session.selected_field > 0) {
+                game.session.selected_field--;
+            }
             break;
 
         case INPUT_DOWN:
-            if(game.cursor_y < 3u) game.cursor_y++;
+            if(game.session.selected_field + 1u < BETTING_FIELD_COUNT) {
+                game.session.selected_field++;
+            }
             break;
 
         case INPUT_LEFT:
+        {
+            struct Bettor *bettor = &game.session.bettors[game.session.active_bettor];
+            struct Wager *wager = &game.session.wagers[game.session.active_bettor];
+            clear_confirmed_wager(bettor, wager);
+            switch(game.session.selected_field) {
+                case BETTING_FIELD_AMOUNT:
+                    adjust_wager_amount(bettor, wager, -1);
+                    break;
+                case BETTING_FIELD_TYPE:
+                    cycle_wager_type(wager, -1);
+                    break;
+                case BETTING_FIELD_HORSE:
+                    cycle_selected_horse(wager, -1);
+                    break;
+            }
+            resume_game();
             break;
+        }
 
         case INPUT_RIGHT:
+        {
+            struct Bettor *bettor = &game.session.bettors[game.session.active_bettor];
+            struct Wager *wager = &game.session.wagers[game.session.active_bettor];
+            clear_confirmed_wager(bettor, wager);
+            switch(game.session.selected_field) {
+                case BETTING_FIELD_AMOUNT:
+                    adjust_wager_amount(bettor, wager, 1);
+                    break;
+                case BETTING_FIELD_TYPE:
+                    cycle_wager_type(wager, 1);
+                    break;
+                case BETTING_FIELD_HORSE:
+                    cycle_selected_horse(wager, 1);
+                    break;
+            }
+            resume_game();
             break;
+        }
 
         case INPUT_SELECT:
             // TODO: Use SELECT for context-sensitive actions in betting or setup screens.
@@ -327,14 +493,39 @@ void input_game(uint8_t key, bool down)
             break;
 
         case INPUT_A:
-            // TODO: Use A to confirm bets, choose menu items, or trigger race flow.
-            game_show_dialog("TODO: bind A to confirm current action");
+        {
+            struct Bettor *bettor = &game.session.bettors[game.session.active_bettor];
+            struct Wager *wager = &game.session.wagers[game.session.active_bettor];
+            if(!wager->confirmed) {
+                commit_wager(bettor, wager);
+            }
+            resume_game();
             break;
+        }
 
         case INPUT_B:
-            // TODO: Use B to cancel or back out of menus.
-            game_show_dialog("TODO: bind B to cancel current action");
+        {
+            struct Bettor *bettor = &game.session.bettors[game.session.active_bettor];
+            struct Wager *wager = &game.session.wagers[game.session.active_bettor];
+            clear_confirmed_wager(bettor, wager);
+            wager->type = BET_TYPE_WIN;
+            wager->amount = 50;
+            wager->first_pick = 0;
+            wager->second_pick = 1;
+            sync_selected_entry();
+            resume_game();
             break;
+        }
+
+        case INPUT_X:
+        {
+            struct Bettor *bettor = &game.session.bettors[game.session.active_bettor];
+            struct Wager *wager = &game.session.wagers[game.session.active_bettor];
+            clear_confirmed_wager(bettor, wager);
+            cycle_wager_type(wager, 1);
+            resume_game();
+            break;
+        }
 
         default:
             break;
