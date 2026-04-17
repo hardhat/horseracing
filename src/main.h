@@ -56,7 +56,7 @@ enum TILE_COLORS
     TILE_COLOR_RED = 5, // 5-8 are red
     TILE_COLOR_GREEN = 9, // 9-12 are green
     TILE_COLOR_BLUE = 13,
-    TILE_CURSOR = 14,    // This is 4 tiles in a 2x2 square
+    TILE_CURSOR = 14,
     TILE_COLOR_TITLE   = 18,   // title tileset:   floor(285/16)=17 × 2 = 34 tiles (18-51)
     TILE_COLOR_MAP     = 52,   // map tileset:     16 × 4 = 64 tiles (52-115)
     TILE_COLOR_HUD     = 116,  // hud tileset:     8 × 3 = 24 tiles (116-139)

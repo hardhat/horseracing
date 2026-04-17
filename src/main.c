@@ -219,23 +219,23 @@ void init(void)
 
     debug_log("Loaded tilesets and palettes.");
 
-    // Make a cursor block from 4 tiles with a 2x2 pixel square with black background and white rectangle
-    clear_text_tiles(TEXT_COLOR_BLACK, 4);
-    // Horizontal line on top and bottom
-    for(int i=0;i<32;i++)
+    // Build a single-tile betting cursor marker instead of the old 2x2 box.
+    clear_text_tiles(TEXT_COLOR_BLACK, 1);
+    for(int i=3;i<13;i++)
     {
-        draw_text_pixel(i, 0, TEXT_COLOR_WHITE);
-        draw_text_pixel(i+32, 15, TEXT_COLOR_WHITE);
+        draw_text_pixel(13, (uint8_t)i, TEXT_COLOR_WHITE);
     }
-    // Vertical line on left and right
-    for(int i=0;i<16;i++)
+    for(int i=0;i<5;i++)
     {
-        draw_text_pixel(0, i, TEXT_COLOR_WHITE);
-        draw_text_pixel(31, i, TEXT_COLOR_WHITE);
-        draw_text_pixel(32, i, TEXT_COLOR_WHITE);
-        draw_text_pixel(63, i, TEXT_COLOR_WHITE);
+        draw_text_pixel((uint16_t)(13 - i), (uint8_t)(7 - i), TEXT_COLOR_WHITE);
+        draw_text_pixel((uint16_t)(13 - i), (uint8_t)(8 + i), TEXT_COLOR_WHITE);
     }
-    render_text(TILE_CURSOR, 4);
+    for(int i=0;i<4;i++)
+    {
+        draw_text_pixel((uint16_t)(5 + i), 7, TEXT_COLOR_WHITE);
+        draw_text_pixel((uint16_t)(5 + i), 8, TEXT_COLOR_WHITE);
+    }
+    render_text(TILE_CURSOR, 1);
 
     gfx_enable_screen(0);
 

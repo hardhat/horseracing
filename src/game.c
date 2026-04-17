@@ -88,7 +88,7 @@ static void draw_bet_entry(uint8_t icon_tile, uint8_t marker_tile, uint8_t map_y
 
 static uint8_t selected_row_y(void)
 {
-    return (uint8_t)(6u + (game.cursor_y & 0x03u));
+    return (uint8_t)(7u + (game.cursor_y & 0x03u));
 }
 
 static void draw_template_screen(void)
