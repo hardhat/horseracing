@@ -37,19 +37,65 @@ static void draw_template_screen(void)
 {
     fill_tilemap(TILE_COLOR_BLACK, 0, 0, TILES_ACROSS, TILES_DOWN);
 
-    // Sample layer usage only. Replace these strips with betting UI and race HUD tiles.
     for(uint8_t x = 0; x < TILES_ACROSS; x++) {
-        draw_tilemap(x, 0, TILE_COLOR_TITLE + (x % 17u));
-        draw_tilemap(x, 14, TILE_COLOR_HUD + (x % 8u));
+        draw_tilemap(x, 0, (uint8_t)(TILE_COLOR_TITLE + (x % 17u)));
+    }
+
+    draw_tilemap(0, 13, TILE_HUD_LABEL_RACE);
+    draw_tilemap(1, 13, TILE_HUD_LABEL_BANK);
+    draw_tilemap(2, 13, TILE_HUD_LABEL_ODDS);
+    draw_tilemap(3, 13, TILE_HUD_LABEL_POST);
+    draw_tilemap(4, 13, TILE_HUD_LABEL_WIN);
+    draw_tilemap(5, 13, TILE_HUD_LABEL_EXACTA);
+    draw_tilemap(6, 13, TILE_HUD_LABEL_MUD);
+    draw_tilemap(7, 13, TILE_HUD_LABEL_TURF);
+    for(uint8_t x = 8; x < TILES_ACROSS; x++) {
+        draw_tilemap(x, 13, (uint8_t)(TILE_HUD_PANEL_FRAME_0 + ((x - 8u) & 0x03u)));
+    }
+
+    static const uint8_t prototype_track_row[] = {
+        TILE_TRACK_DRY_GRANDSTAND_0,
+        TILE_TRACK_DRY_GRANDSTAND_1,
+        TILE_TRACK_DRY_CROWD_0,
+        TILE_TRACK_DRY_CROWD_1,
+        TILE_TRACK_DRY_CLEAR_0,
+        TILE_TRACK_DRY_CLEAR_1,
+        TILE_TRACK_DRY_FINISH,
+        TILE_TRACK_DRY_FURLONG,
+        TILE_TRACK_DRY_HORSE_LIGHT,
+        TILE_TRACK_DRY_HORSE_GREEN,
+        TILE_TRACK_DRY_MARKER,
+        TILE_TRACK_UTIL_RAIL_CURVE_0,
+        TILE_TRACK_UTIL_RAIL_CURVE_1,
+        TILE_TRACK_UTIL_RAIL_CURVE_2,
+        TILE_TRACK_UTIL_RAIL_CURVE_3,
+        TILE_TRACK_UTIL_POST_0,
+        TILE_TRACK_UTIL_POST_1,
+        TILE_TRACK_UTIL_POST_2,
+        TILE_TRACK_UTIL_POST_3,
+        TILE_TRACK_UTIL_DRY_0,
+    };
+    draw_tilemap_array(0, 10, (uint8_t *)prototype_track_row, sizeof(prototype_track_row));
+
+    draw_tilemap(0, 14, TILE_HUD_HORSE_WHITE);
+    draw_tilemap(1, 14, TILE_HUD_HORSE_GREEN);
+    draw_tilemap(2, 14, TILE_HUD_HORSE_GOLD);
+    draw_tilemap(3, 14, TILE_HUD_HORSE_RED);
+    draw_tilemap(4, 14, TILE_HUD_MARKER_FIRST);
+    draw_tilemap(5, 14, TILE_HUD_MARKER_SECOND);
+    draw_tilemap(6, 14, TILE_HUD_PP_TIME);
+    draw_tilemap(7, 14, TILE_HUD_PP_FINISH);
+    for(uint8_t x = 8; x < TILES_ACROSS; x++) {
+        draw_tilemap(x, 14, (uint8_t)(TILE_HUD_PANEL_FRAME_0 + ((x - 8u) & 0x03u)));
     }
 
     set_font(FONT_NICETY_BOLD);
     draw_text_strip(TEMPLATE_TEXT_TILE, 2, 2, "HORSE RACING", COL_WHITE, COL_BLACK);
     set_font(FONT_NICETY);
-    draw_text_strip(TEMPLATE_NOTE_TILE, 1, 5, "TODO: betting sheet", COL_WHITE, COL_BLACK);
-    draw_text_strip((uint8_t)(TEMPLATE_NOTE_TILE + 10u), 1, 7, "TODO: past performances", COL_WHITE, COL_BLACK);
-    draw_text_strip((uint8_t)(TEMPLATE_NOTE_TILE + 22u), 1, 9, "TODO: live race scene", COL_WHITE, COL_BLACK);
-    draw_text_strip((uint8_t)(TEMPLATE_NOTE_TILE + 32u), 1, 12, "D-pad moves sample cursor", COL_LIGHT_GRAY, COL_BLACK);
+    draw_text_strip(TEMPLATE_NOTE_TILE, 1, 5, "betting + race tiles loaded", COL_WHITE, COL_BLACK);
+    draw_text_strip((uint8_t)(TEMPLATE_NOTE_TILE + 14u), 1, 7, "TODO: past performances", COL_WHITE, COL_BLACK);
+    draw_text_strip((uint8_t)(TEMPLATE_NOTE_TILE + 26u), 1, 9, "TODO: live race logic", COL_WHITE, COL_BLACK);
+    draw_text_strip((uint8_t)(TEMPLATE_NOTE_TILE + 36u), 1, 12, "SNES or keyboard moves cursor", COL_LIGHT_GRAY, COL_BLACK);
 
     render_tilemap(0);
     render_tilemap(1);

@@ -144,7 +144,7 @@ Build these in order. Later steps should not start until their prerequisites are
 - [x] Define an MVP tile budget that stays within the 256 shared 16x16 tile limit.
 - [x] Produce a minimal title screen tile set.
 - [x] Produce MVP betting-sheet UI tiles.
-- [ ] Produce MVP past-performance UI tiles.
+- [x] Produce MVP past-performance UI tiles.
 - [ ] Produce a readable font, numerals, and betting symbols.
 - [ ] Produce horse art that reads clearly by color.
 - [ ] Produce minimal jockey art.
