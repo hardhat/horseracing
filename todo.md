@@ -7,7 +7,7 @@ The MVP is the smallest version that delivers the complete original game loop:
 - [ ] Boot to a title screen and start a new 10-race program.
 - [ ] Implement player setup for 1 to 6 bettors.
 - [ ] Implement setup for 0, 1, or 2 human jockeys.
-- [ ] Detect and read SNES controller input needed for menus and racing.
+- [x] Detect and read SNES controller input needed for menus and racing.
 - [ ] Define compact data structures for bettors, horses, race entries, and race results.
 - [ ] Implement generation of 8 persistent horses at the start of a new session.
 - [ ] Implement persistent horse traits: break speed, early pace, endurance, stretch speed, and 3 surface affinities.
@@ -58,7 +58,7 @@ The MVP is the smallest version that delivers the complete original game loop:
 - [ ] Display final standings and overall winner.
 - [x] Build a minimal tile set that fits within the 256-tile budget.
 - [ ] Build minimal horse and jockey art that is readable by color.
-- [ ] Build minimal dry, muddy, and turf visual variants.
+- [x] Build minimal dry, muddy, and turf visual variants.
 - [ ] Implement core audio cues: UI click, error buzz, call to post, gate clang, hoofbeats, furlong gong, whip crack, and crowd cheer.
 - [ ] Verify the full 10-race loop runs end to end without resetting or corrupting state.
 - [ ] Verify all MVP features work with one controller.
@@ -76,7 +76,7 @@ Build these in order. Later steps should not start until their prerequisites are
 #### Step 1: Core Runtime Foundation
 
 - [ ] Define compact runtime structures for bettors, horses, races, wagers, past performances, and results.
-- [ ] Implement SNES controller input handling for menus and races.
+- [x] Implement SNES controller input handling for menus and races.
 - [ ] Build the boot flow from title screen to new 10-race program.
 - [ ] Implement player setup for 1 to 6 bettors.
 - [ ] Implement jockey setup for 0, 1, or 2 human riders.
@@ -143,15 +143,15 @@ Build these in order. Later steps should not start until their prerequisites are
 
 - [x] Define an MVP tile budget that stays within the 256 shared 16x16 tile limit.
 - [x] Produce a minimal title screen tile set.
-- [ ] Produce MVP betting-sheet UI tiles.
+- [x] Produce MVP betting-sheet UI tiles.
 - [ ] Produce MVP past-performance UI tiles.
 - [ ] Produce a readable font, numerals, and betting symbols.
 - [ ] Produce horse art that reads clearly by color.
 - [ ] Produce minimal jockey art.
 - [ ] Produce a minimal starting gate visual.
-- [ ] Produce race track tiles for rails, lane reads, finish line, and furlong markers.
-- [ ] Produce background scenery tiles for parallax racing scenes.
-- [ ] Produce dry, muddy, and turf visual variants using palettes and minimal tile changes.
+- [x] Produce race track tiles for rails, lane reads, finish line, and furlong markers.
+- [x] Produce background scenery tiles for parallax racing scenes.
+- [x] Produce dry, muddy, and turf visual variants using palettes and minimal tile changes.
 - [ ] Produce tote-board and final-standings presentation tiles.
 - [ ] Verify all MVP art assets fit the tile and sprite budget.
 
@@ -202,7 +202,7 @@ Tasks:
 - [ ] Build boot flow from title screen to a new session.
 - [ ] Implement player setup for 1 to 6 bettors.
 - [ ] Implement jockey setup for 0, 1, or 2 human riders.
-- [ ] Implement SNES controller input handling for menus and races.
+- [x] Implement SNES controller input handling for menus and races.
 - [ ] Define compact data structures for bettors, horses, race programs, wagers, and results.
 - [ ] Implement session reset and new-game initialization.
 
