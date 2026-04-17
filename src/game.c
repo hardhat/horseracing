@@ -250,6 +250,8 @@ void init_gameover(void)
     render_tilemap(1);
     render_tilemap(0);
 
+    reset_text_tile_arena();
+
     for(uint8_t y = 0; y < TILES_DOWN; y++) {
         for(uint8_t x = 0; x < TILES_ACROSS; x++) {
             draw_tilemap(x, y, (uint8_t)(TILE_COLOR_WHITE + ((x + y) & 0x03u)));
