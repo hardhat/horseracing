@@ -274,6 +274,102 @@ Recommended budget:
 
 This budget is guidance, not a hard per-category rule, but the total must not exceed 256 unique tiles in memory at once for the chosen asset set.
 
+### Prototype Sheet Layout
+
+The current prototype asset pipeline should be organized into four sheets:
+
+- `title.gif`: title and menu presentation tiles.
+- `map.gif`: track, scenery, rail, and marker tiles.
+- `hud.gif`: betting, results, and status UI tiles.
+- `sprites.gif`: horses, jockeys, gate parts, and cursor/highlight sprites.
+
+These sheets are planning artifacts for the first horse-racing-specific art pass. They do not need final art polish, but they should answer tile-budget and layout questions early.
+
+#### Title Sheet
+
+Target size:
+
+- 17 x 2 tiles.
+- 34 tiles total.
+
+Planned use:
+
+- 10 to 14 tiles for the title logo.
+- 4 to 6 tiles for menu frames and separators.
+- 4 to 6 tiles for prompts such as `PRESS START` and setup headings.
+- 4 tiles reserved for selection arrows, cursors, or menu embellishments.
+- Remaining tiles reserved for alternates or cleanup.
+
+Prototype goal:
+
+- Show a readable game title.
+- Support the title screen and player setup screen without borrowing from race UI tiles.
+
+#### Track Sheet
+
+Target size:
+
+- 16 x 4 tiles.
+- 64 tiles total.
+
+Planned use:
+
+- 8 to 12 tiles for dry track variants.
+- 8 to 12 tiles for muddy track variants.
+- 8 to 12 tiles for turf track variants.
+- 6 to 8 tiles for rails, lane boundaries, and edge transitions.
+- 4 to 6 tiles for furlong posts and finish line structures.
+- 8 to 12 tiles for distant grandstand, sky, infield, or crowd blocks.
+- Remaining tiles for utility fillers and transitions.
+
+Prototype goal:
+
+- Prove that the race can read clearly with distinct dry, muddy, and turf conditions.
+- Prove that foreground and background layers can share a coherent visual language.
+
+#### HUD Sheet
+
+Target size:
+
+- 8 x 3 tiles.
+- 24 tiles total.
+
+Planned use:
+
+- 8 to 10 tiles for panel borders, corners, and dividers.
+- 4 to 6 tiles for cursor and selection highlights.
+- 4 to 6 tiles for betting markers such as Win, Exacta, odds separators, and bankroll symbols.
+- 4 to 6 tiles for compact results and race-state widgets.
+
+Font and numerals should continue to be rendered through the text tile path rather than consuming this sheet unless proven necessary.
+
+Prototype goal:
+
+- Support betting-sheet framing, past-performance framing, compact race HUD, and tote-board/result accents.
+
+#### Sprite Sheet
+
+Target size:
+
+- 8 x 2 tiles.
+- 16 tiles total in the current prototype allocation.
+
+Planned use for the first pass:
+
+- 8 tiles for one two-frame horse body set.
+- 4 tiles for a second horse color/style or jockey variation.
+- 2 to 4 tiles for gate doors, a highlight cursor, or a marker sprite.
+
+Prototype goal:
+
+- Validate whether horses should be built as combined horse-plus-jockey sprites or split layers.
+- Validate whether the current 16-tile prototype allocation is enough for an early race prototype.
+
+Expected follow-up:
+
+- The sprite budget will likely need to grow beyond this prototype allocation once horse animation and color readability are tested.
+- If that happens, reduce decorative background usage before cutting HUD readability.
+
 ### Background Layer
 
 Use the 80x40 background tilemap for distant scenery.

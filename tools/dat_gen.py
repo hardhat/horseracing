@@ -14,8 +14,8 @@ Layout
     [map palette]
   [hud tileset]
   [hud palette]
-    [enemies tileset]
-    [enemies palette]
+    [sprites tileset]
+    [sprites palette]
 
 Run from the repository root:
     python3 tools/dat_gen.py
@@ -42,8 +42,8 @@ DAT_BLOCK_MAP_TS      = 3
 DAT_BLOCK_MAP_PAL     = 4
 DAT_BLOCK_HUD_TS     = 5
 DAT_BLOCK_HUD_PAL    = 6
-DAT_BLOCK_ENEMIES_TS     = 7
-DAT_BLOCK_ENEMIES_PAL    = 8
+DAT_BLOCK_SPRITES_TS     = 7
+DAT_BLOCK_SPRITES_PAL    = 8
 DAT_BLOCK_COUNT         = 9
 
 # DatEntry: uint32 offset, uint16 size, uint8 type, uint8 id
@@ -78,7 +78,7 @@ def main():
         (DAT_BLOCK_TITLE_TS,   DAT_BLOCK_TITLE_PAL,   'title'),
         (DAT_BLOCK_MAP_TS,     DAT_BLOCK_MAP_PAL,     'map'),
         (DAT_BLOCK_HUD_TS,     DAT_BLOCK_HUD_PAL,     'hud'),
-        (DAT_BLOCK_ENEMIES_TS, DAT_BLOCK_ENEMIES_PAL, 'sprites'),
+        (DAT_BLOCK_SPRITES_TS, DAT_BLOCK_SPRITES_PAL, 'sprites'),
     ]
 
     # ------------------------------------------------------------------
@@ -109,9 +109,9 @@ def main():
     header += make_magic_entry()
     for bid in range(1, DAT_BLOCK_COUNT):
         data = asset_data[bid]
-        if bid in [DAT_BLOCK_TITLE_TS, DAT_BLOCK_MAP_TS, DAT_BLOCK_HUD_TS, DAT_BLOCK_ENEMIES_TS]:
+        if bid in [DAT_BLOCK_TITLE_TS, DAT_BLOCK_MAP_TS, DAT_BLOCK_HUD_TS, DAT_BLOCK_SPRITES_TS]:
             entry_type = DAT_TYPE_TILESET
-        elif bid in [DAT_BLOCK_TITLE_PAL, DAT_BLOCK_MAP_PAL, DAT_BLOCK_HUD_PAL, DAT_BLOCK_ENEMIES_PAL]:
+        elif bid in [DAT_BLOCK_TITLE_PAL, DAT_BLOCK_MAP_PAL, DAT_BLOCK_HUD_PAL, DAT_BLOCK_SPRITES_PAL]:
             entry_type = DAT_TYPE_PALETTE
         header += make_entry(block_offsets[bid], len(data), entry_type, bid)
 

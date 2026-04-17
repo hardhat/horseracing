@@ -56,7 +56,7 @@ The MVP is the smallest version that delivers the complete original game loop:
 - [ ] Advance automatically from race results to the next betting phase.
 - [ ] End the session after race 10.
 - [ ] Display final standings and overall winner.
-- [ ] Build a minimal tile set that fits within the 256-tile budget.
+- [x] Build a minimal tile set that fits within the 256-tile budget.
 - [ ] Build minimal horse and jockey art that is readable by color.
 - [ ] Build minimal dry, muddy, and turf visual variants.
 - [ ] Implement core audio cues: UI click, error buzz, call to post, gate clang, hoofbeats, furlong gong, whip crack, and crowd cheer.
@@ -141,8 +141,8 @@ Build these in order. Later steps should not start until their prerequisites are
 
 ### Art
 
-- [ ] Define an MVP tile budget that stays within the 256 shared 16x16 tile limit.
-- [ ] Produce a minimal title screen tile set.
+- [x] Define an MVP tile budget that stays within the 256 shared 16x16 tile limit.
+- [x] Produce a minimal title screen tile set.
 - [ ] Produce MVP betting-sheet UI tiles.
 - [ ] Produce MVP past-performance UI tiles.
 - [ ] Produce a readable font, numerals, and betting symbols.
@@ -317,7 +317,7 @@ Add the minimum art and audio needed for a coherent playable release.
 
 Tasks:
 
-- [ ] Define an MVP tile budget that fits the 256 shared 16x16 tile limit.
+- [x] Define an MVP tile budget that fits the 256 shared 16x16 tile limit.
 - [ ] Produce minimal title, betting-sheet, past-performance, race, tote-board, and standings visuals.
 - [ ] Produce readable font, numerals, and betting symbols.
 - [ ] Produce minimal horse and jockey art readable by color.

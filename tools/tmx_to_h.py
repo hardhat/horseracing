@@ -7,7 +7,7 @@ Tileset name → vontraps TILE_COLOR_* base (must match main.h):
     map      → TILE_COLOR_MAP     = 52
     title    → TILE_COLOR_TITLE   = 18
     hud      → TILE_COLOR_HUD     = 116
-    enemies  → TILE_COLOR_ENEMIES = 140
+    sprites  → TILE_COLOR_SPRITES = 140
 
 Usage:
     python3 tools/tmx_to_h.py level/level1.tmx src/level1.h
@@ -24,7 +24,7 @@ TSX_BASE = {
     'map':     52,   # TILE_COLOR_MAP
     'title':   18,   # TILE_COLOR_TITLE
     'hud':    116,   # TILE_COLOR_HUD
-    'enemies': 140,  # TILE_COLOR_ENEMIES
+    'sprites': 140,  # TILE_COLOR_SPRITES
 }
 
 EMPTY_TILE = 0   # TILE_COLOR_BLACK

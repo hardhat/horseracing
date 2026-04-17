@@ -23,8 +23,8 @@
 #define DAT_BLOCK_MAP_PAL   4
 #define DAT_BLOCK_HUD_TS     5
 #define DAT_BLOCK_HUD_PAL    6
-#define DAT_BLOCK_ENEMIES_TS     7
-#define DAT_BLOCK_ENEMIES_PAL    8
+#define DAT_BLOCK_SPRITES_TS     7
+#define DAT_BLOCK_SPRITES_PAL    8
 #define DAT_BLOCK_COUNT         9
 
 // On-disk header entry (8 bytes, packed).
