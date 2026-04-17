@@ -14,6 +14,23 @@ struct Game game;
 static bool held[MAX_INPUT];
 static uint8_t text_tile_next;
 
+static const char *const horse_color_name[HORSE_COLOR_COUNT] = {
+    "WHITE",
+    "GREEN",
+    "GOLD",
+    "RED",
+    "BLUE",
+    "PURPLE",
+    "BROWN",
+    "BLACK",
+};
+
+static const char *const surface_name[SURFACE_COUNT] = {
+    "DRY",
+    "MUD",
+    "TURF",
+};
+
 static uint8_t text_tile_span(const char *text)
 {
     size_t len = strlen(text);
@@ -91,8 +108,87 @@ static uint8_t selected_row_y(void)
     return (uint8_t)(7u + (game.cursor_y & 0x03u));
 }
 
+static uint8_t horse_icon_tile(uint8_t color)
+{
+    switch(color) {
+        case HORSE_COLOR_WHITE:
+            return TILE_HUD_HORSE_WHITE;
+        case HORSE_COLOR_GREEN:
+            return TILE_HUD_HORSE_GREEN;
+        case HORSE_COLOR_GOLD:
+            return TILE_HUD_HORSE_GOLD;
+        case HORSE_COLOR_RED:
+        default:
+            return TILE_HUD_HORSE_RED;
+    }
+}
+
+static uint8_t entry_marker_tile(uint8_t entry_index)
+{
+    switch(entry_index) {
+        case 0:
+            return TILE_HUD_MARKER_FIRST;
+        case 1:
+            return TILE_HUD_MARKER_SECOND;
+        case 2:
+            return TILE_HUD_PP_TIME;
+        case 3:
+        default:
+            return TILE_HUD_PP_FINISH;
+    }
+}
+
+static void init_test_session(void)
+{
+    memset(&game.session, 0, sizeof(game.session));
+
+    game.session.bettor_count = 1;
+    game.session.jockey_count = 0;
+    game.session.current_race = 0;
+    game.session.active_bettor = 0;
+    game.session.selected_entry = 0;
+
+    game.session.bettors[0].bankroll = 750;
+    game.session.bettors[0].active = 1;
+
+    for(uint8_t i = 0; i < 8; i++) {
+        game.session.stable[i].color = i;
+        game.session.stable[i].traits.break_speed = (uint8_t)(5u + i);
+        game.session.stable[i].traits.early_pace = (uint8_t)(6u + i);
+        game.session.stable[i].traits.endurance = (uint8_t)(12u - i);
+        game.session.stable[i].traits.stretch_speed = (uint8_t)(7u + (i & 0x03u));
+        game.session.stable[i].traits.surface_affinity[SURFACE_DRY] = (uint8_t)(8u + (i & 0x01u));
+        game.session.stable[i].traits.surface_affinity[SURFACE_MUDDY] = (uint8_t)(6u + ((i + 1u) & 0x01u));
+        game.session.stable[i].traits.surface_affinity[SURFACE_TURF] = (uint8_t)(7u + ((i + 2u) & 0x01u));
+    }
+
+    game.session.wagers[0].amount = 50;
+    game.session.wagers[0].bettor_index = 0;
+    game.session.wagers[0].type = BET_TYPE_WIN;
+    game.session.wagers[0].first_pick = 0;
+    game.session.wagers[0].second_pick = 1;
+
+    game.session.races[0].surface = SURFACE_DRY;
+    game.session.races[0].distance_furlongs = 6;
+    game.session.races[0].entries[0].horse_index = HORSE_COLOR_WHITE;
+    game.session.races[0].entries[0].odds = 3;
+    game.session.races[0].entries[1].horse_index = HORSE_COLOR_GREEN;
+    game.session.races[0].entries[1].odds = 4;
+    game.session.races[0].entries[2].horse_index = HORSE_COLOR_GOLD;
+    game.session.races[0].entries[2].odds = 5;
+    game.session.races[0].entries[3].horse_index = HORSE_COLOR_RED;
+    game.session.races[0].entries[3].odds = 6;
+}
+
 static void draw_template_screen(void)
 {
+    struct RaceCard *race = &game.session.races[game.session.current_race];
+    struct Bettor *bettor = &game.session.bettors[game.session.active_bettor];
+    struct Wager *wager = &game.session.wagers[game.session.active_bettor];
+    char summary_line[32];
+    char wager_line[24];
+    char entry_line[16];
+
     fill_tilemap(TILE_COLOR_BLACK, 0, 0, TILES_ACROSS, TILES_DOWN);
     reset_text_tile_arena();
 
@@ -125,21 +221,34 @@ static void draw_template_screen(void)
     };
     draw_tilemap_array(0, 11, (uint8_t *)prototype_track_row, sizeof(prototype_track_row));
 
+    sprintf(summary_line, "R%u %s %uF  $%u",
+        (unsigned)(game.session.current_race + 1u),
+        surface_name[race->surface],
+        (unsigned)race->distance_furlongs,
+        (unsigned)bettor->bankroll);
+
+    sprintf(wager_line, "%s %s",
+        (wager->type == BET_TYPE_EXACTA) ? "EXA" : "WIN",
+        horse_color_name[game.session.stable[wager->first_pick].color]);
+
     set_font(FONT_NICETY_BOLD);
     draw_text_pair(3, 3,
         "BET SHEET",
-        "R1 DRY 6F  $750",
+        summary_line,
         COL_WHITE, COL_BLACK);
     set_font(FONT_NICETY);
     draw_text_pair(4, 6,
-        "WIN WHITE",
+        wager_line,
         "HORSE    ODDS",
         COL_LIGHT_GRAY, COL_BLACK);
 
-    draw_bet_entry(TILE_HUD_HORSE_WHITE, TILE_HUD_MARKER_FIRST, 7, "WHITE   3-1");
-    draw_bet_entry(TILE_HUD_HORSE_GREEN, TILE_HUD_MARKER_SECOND, 8, "GREEN   4-1");
-    draw_bet_entry(TILE_HUD_HORSE_GOLD, TILE_HUD_PP_TIME, 9, "GOLD    5-1");
-    draw_bet_entry(TILE_HUD_HORSE_RED, TILE_HUD_PP_FINISH, 10, "RED     6-1");
+    for(uint8_t i = 0; i < 4; i++) {
+        struct RaceEntry *entry = &race->entries[i];
+        struct Horse *horse = &game.session.stable[entry->horse_index];
+
+        sprintf(entry_line, "%-6s %u-1", horse_color_name[horse->color], (unsigned)entry->odds);
+        draw_bet_entry(horse_icon_tile(horse->color), entry_marker_tile(i), (uint8_t)(7u + i), entry_line);
+    }
 
     draw_text_pair(1, 13,
         "A BET  Y FORM",
@@ -171,6 +280,8 @@ void init_game(void)
 
     memset(held, 0, sizeof(held));
     memset(&game, 0, sizeof(game));
+
+    init_test_session();
 
     game.cursor_x = 0;
     game.cursor_y = 0;
