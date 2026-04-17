@@ -117,7 +117,7 @@ static uint8_t horse_icon_tile(uint8_t color)
             return TILE_HUD_HORSE_GREEN;
         case HORSE_COLOR_GOLD:
             return TILE_HUD_HORSE_GOLD;
-        case HORSE_COLOR_RED:
+        //case HORSE_COLOR_RED:
         default:
             return TILE_HUD_HORSE_RED;
     }
@@ -132,7 +132,7 @@ static uint8_t entry_marker_tile(uint8_t entry_index)
             return TILE_HUD_MARKER_SECOND;
         case 2:
             return TILE_HUD_PP_TIME;
-        case 3:
+        //case 3:
         default:
             return TILE_HUD_PP_FINISH;
     }

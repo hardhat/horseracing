@@ -8,7 +8,7 @@ The MVP is the smallest version that delivers the complete original game loop:
 - [ ] Implement player setup for 1 to 6 bettors.
 - [ ] Implement setup for 0, 1, or 2 human jockeys.
 - [x] Detect and read SNES controller input needed for menus and racing.
-- [ ] Define compact data structures for bettors, horses, race entries, and race results.
+- [x] Define compact data structures for bettors, horses, race entries, and race results.
 - [ ] Implement generation of 8 persistent horses at the start of a new session.
 - [ ] Implement persistent horse traits: break speed, early pace, endurance, stretch speed, and 3 surface affinities.
 - [ ] Implement generation of a 10-race program.
@@ -75,7 +75,7 @@ Build these in order. Later steps should not start until their prerequisites are
 
 #### Step 1: Core Runtime Foundation
 
-- [ ] Define compact runtime structures for bettors, horses, races, wagers, past performances, and results.
+- [x] Define compact runtime structures for bettors, horses, races, wagers, past performances, and results.
 - [x] Implement SNES controller input handling for menus and races.
 - [ ] Build the boot flow from title screen to new 10-race program.
 - [ ] Implement player setup for 1 to 6 bettors.
@@ -203,7 +203,7 @@ Tasks:
 - [ ] Implement player setup for 1 to 6 bettors.
 - [ ] Implement jockey setup for 0, 1, or 2 human riders.
 - [x] Implement SNES controller input handling for menus and races.
-- [ ] Define compact data structures for bettors, horses, race programs, wagers, and results.
+- [x] Define compact data structures for bettors, horses, race programs, wagers, and results.
 - [ ] Implement session reset and new-game initialization.
 
 Completion gate:
