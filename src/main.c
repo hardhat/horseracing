@@ -20,6 +20,7 @@
 #include "menu.h"
 #include "game.h"
 #include "dat.h"
+#include "controller.h"
 
 void draw_big_text(const char *text, uint16_t x, uint8_t y, uint8_t color);
 
@@ -46,6 +47,7 @@ uint8_t tilemap_width=20;
 uint8_t tilemap_height=15;
 
 zos_dev_t ser;
+uint16_t controller_state;
 
 void debug_log(const char *message)
 {
@@ -89,7 +91,6 @@ uint8_t handle_input(uint8_t key)
     switch(key)
     {
         case KB_ESC:
-        case KB_KEY_Q:
             quit = true;
             return MAX_INPUT;
         case KB_KEY_W:
@@ -117,15 +118,15 @@ uint8_t handle_input(uint8_t key)
         case KB_KEY_Y:
             return INPUT_Y;
         case KB_KEY_ENTER:
-        case KB_KEY_E:
             return INPUT_START;
-        case KB_KEY_TAB:
+        case KB_KEY_QUOTE:
+        case KB_RIGHT_SHIFT:
             return INPUT_SELECT;
         case KB_KEY_LEFT_BRACKET:
-        case KB_KEY_L:
+        case KB_KEY_Q:
             return INPUT_L;
         case KB_KEY_RIGHT_BRACKET:
-        case KB_KEY_R:
+        case KB_KEY_E:
             return INPUT_R;
         default:
             return MAX_INPUT;
@@ -140,6 +141,7 @@ void init(void)
 	exit(1);
     }
     debug_log("Initializing...");
+    controller_init();
 
     gfx_enable_screen(0);
     gfx_initialize(ZVB_CTRL_VID_MODE_GFX_320_8BIT, &ctx);
@@ -207,12 +209,12 @@ void init(void)
     }
     render_tilemap(0);
 
-    gfx_tileset_options options3 = {TILESET_COMP_LZ, (uint16_t)TILE_COLOR_ENEMIES*256u, PAL_ENEMIES, 1};
-    dat_load_tileset(DAT_BLOCK_ENEMIES_TS, text_tiles, &ts_size);
-    dat_load_palette(DAT_BLOCK_ENEMIES_PAL, &pal_ptr, &pal_size);
-    gfx_palette_load(&ctx, pal_ptr, pal_size, PAL_ENEMIES);
+    gfx_tileset_options options3 = {TILESET_COMP_LZ, (uint16_t)TILE_COLOR_SPRITES*256u, PAL_SPRITES, 1};
+    dat_load_tileset(DAT_BLOCK_SPRITES_TS, text_tiles, &ts_size);
+    dat_load_palette(DAT_BLOCK_SPRITES_PAL, &pal_ptr, &pal_size);
+    gfx_palette_load(&ctx, pal_ptr, pal_size, PAL_SPRITES);
     gfx_tileset_load(&ctx, text_tiles, ts_size, &options3);
-    draw_big_text("HR", 2, 4, TILE_COLOR_ENEMIES);
+    draw_big_text("HR", 2, 4, TILE_COLOR_SPRITES);
     render_tilemap(0);
 
     debug_log("Loaded tilesets and palettes.");
@@ -581,6 +583,38 @@ void clear_sprites(void)
     sprite_count=0;
 }
 
+// Map from input bit to INPUT_ enum value
+const enum INPUT map_controller[]={
+    INPUT_B, // 0
+    INPUT_Y, // 1
+    INPUT_SELECT, // 2
+    INPUT_START, // 3
+    INPUT_UP, // 4
+    INPUT_DOWN, // 5
+    INPUT_LEFT, // 6
+    INPUT_RIGHT, // 7
+    INPUT_A, // 8
+    INPUT_X, // 9
+    INPUT_L, // 10
+    INPUT_R, // 11
+};
+
+void send_input(uint8_t input, bool down)
+{
+    switch(game_state)
+    {
+        case GAME_STATE_MENU:
+            input_menu(input, down);
+            break;
+        case GAME_STATE_GAME:
+            input_game(input, down);
+            break;
+        case GAME_STATE_GAMEOVER:
+            input_gameover(input, down);
+            break;
+    }
+}
+
 void process_input(void)
 {
     unsigned char keys[32];
@@ -600,23 +634,24 @@ void process_input(void)
                     pressed = true;
                     continue;
                 }
-                switch(game_state)
-                {
-                    case GAME_STATE_MENU:
-                        input_menu(input, pressed);
-                        break;
-                    case GAME_STATE_GAME:
-                        input_game(input, pressed);
-                        break;
-                    case GAME_STATE_GAMEOVER:
-                        input_gameover(input, pressed);
-                        break;
-                }
-
+                send_input(input, pressed);
                 pressed=true;
             }
         }
     } while(size>0);
+    // Scan for game controller
+    uint16_t value = controller_read();
+    uint16_t changed = value ^ controller_state;
+    if(changed) debug_logf("Ctrl: %04x, %04x", value, changed);
+    controller_state = value;
+    // Edge triggered
+    for(uint8_t i=0;i<12;i++) {
+        if(changed & (1<<i)) {
+            uint8_t input = map_controller[i];
+            bool down = (value & (1<<i)) == 0;
+            send_input(input, down);
+        }
+    }
 }
 
 int main(void)

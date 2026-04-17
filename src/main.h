@@ -60,12 +60,12 @@ enum TILE_COLORS
     TILE_COLOR_TITLE   = 18,   // title tileset:   floor(285/16)=17 × 2 = 34 tiles (18-51)
     TILE_COLOR_MAP     = 52,   // map tileset:     16 × 4 = 64 tiles (52-115)
     TILE_COLOR_HUD     = 116,  // hud tileset:     8 × 3 = 24 tiles (116-139)
-    TILE_COLOR_ENEMIES = 140,  // enemies tileset: 8 × 2 = 16 tiles (140-155)
+    TILE_COLOR_SPRITES = 140,  // sprite tileset:  8 × 2 = 16 tiles (140-155)
 
-    TILE_ENEMY_PLACEHOLDER_0_TOP    = TILE_COLOR_ENEMIES + 0,
-    TILE_ENEMY_PLACEHOLDER_1_TOP    = TILE_COLOR_ENEMIES + 1,
-    TILE_ENEMY_PLACEHOLDER_0_BOTTOM = TILE_COLOR_ENEMIES + 8,
-    TILE_ENEMY_PLACEHOLDER_1_BOTTOM = TILE_COLOR_ENEMIES + 9,
+    TILE_SPRITE_PLACEHOLDER_0_TOP    = TILE_COLOR_SPRITES + 0,
+    TILE_SPRITE_PLACEHOLDER_1_TOP    = TILE_COLOR_SPRITES + 1,
+    TILE_SPRITE_PLACEHOLDER_0_BOTTOM = TILE_COLOR_SPRITES + 8,
+    TILE_SPRITE_PLACEHOLDER_1_BOTTOM = TILE_COLOR_SPRITES + 9,
 
     // Template map aliases retained from the sample project for asset inspection.
     // TODO: Replace these names with horse-racing-specific art aliases once the new tiles exist.
@@ -141,7 +141,7 @@ enum TILE_COLORS
 #define PAL_TITLE    32  // title tileset palette:   16 colors (indices  32-47)
 #define PAL_MAP      48  // map tileset palette:     64 colors (indices  48-111)
 #define PAL_HUD     112  // hud tileset palette:      8 colors (indices 112-119)
-#define PAL_ENEMIES 120  // enemies tileset palette: 32 colors (indices 120-151)
+#define PAL_SPRITES 120  // sprite tileset palette:  32 colors (indices 120-151)
 
 enum FONT_FACE
 {
