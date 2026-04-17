@@ -3,8 +3,8 @@
 #include "game.h"
 #include "dat.h"
 
-#define TITLE_TILE 0x90
-#define MENU_TILE 0x98
+#define TITLE_TILE 0xD0
+#define MENU_TILE 0xD8
 #define CHOICE_TILE 0xA0
 #define CHOICE_TILE2 0xB0
 #define CHOICE_TILE3 0xC0
@@ -22,6 +22,9 @@ void init_menu(void)
     char buffer[17+17];
 
     last_choice=-1;
+    fill_tilemap(TILE_COLOR_BLACK, 0, 0, TILES_ACROSS, TILES_DOWN);
+    render_tilemap(1);
+    render_tilemap(0);
     // Template sample: replace these menu entries with horse-racing setup flow.
     for(int i=0;i<17+17;i++) buffer[i]=TILE_COLOR_TITLE+i;
     for(int i=0;i<17+17;i+=17) draw_tilemap_array(2,2+(i/17),(uint8_t *)buffer+i,17);

@@ -18,8 +18,8 @@ The MVP is the smallest version that delivers the complete original game loop:
 - [ ] Implement bettor bankrolls with a $750 starting value.
 - [ ] Enforce the $250 maximum wager or current bankroll, whichever is lower.
 - [ ] Mark busted bettors as out of the game.
-- [ ] Implement the betting sheet screen.
-- [ ] Show race number, entrants, odds, distance, surface, and bettor bankrolls on the betting sheet.
+- [x] Implement the betting sheet screen.
+- [x] Show race number, entrants, odds, distance, surface, and bettor bankrolls on the betting sheet.
 - [ ] Implement turn-based pass-and-play betting entry.
 - [ ] Implement Win bets.
 - [ ] Implement Exacta bets.
@@ -226,7 +226,7 @@ Tasks:
 - [ ] Enforce the $250 max wager cap.
 - [ ] Mark busted bettors as out of the game.
 - [ ] Implement the betting sheet logic.
-- [ ] Show race number, entrants, odds, distance, surface, and bettor bankrolls.
+- [x] Show race number, entrants, odds, distance, surface, and bettor bankrolls.
 - [ ] Implement pass-and-play wager entry.
 - [ ] Implement Win bets.
 - [ ] Implement Exacta bets.

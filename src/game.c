@@ -6,12 +6,13 @@
 #include "main.h"
 #include "game.h"
 
-#define TEMPLATE_TEXT_TILE ((uint8_t)0xA0u)
-#define TEMPLATE_NOTE_TILE ((uint8_t)0xB0u)
+#define TEXT_TILE_ARENA_BASE  ((uint8_t)0x9Cu)
+#define TEXT_TILE_ARENA_LIMIT ((uint8_t)0xD8u)
 
 struct Game game;
 
 static bool held[MAX_INPUT];
+static uint8_t text_tile_next;
 
 static uint8_t text_tile_span(const char *text)
 {
@@ -19,10 +20,38 @@ static uint8_t text_tile_span(const char *text)
     return (uint8_t)((len + 1u) >> 1);
 }
 
-static void draw_text_strip(uint8_t base_tile, uint8_t map_x, uint8_t map_y,
+static uint8_t max_u8(uint8_t a, uint8_t b)
+{
+    return (a > b) ? a : b;
+}
+
+static void reset_text_tile_arena(void)
+{
+    text_tile_next = TEXT_TILE_ARENA_BASE;
+}
+
+static uint8_t alloc_text_tiles(uint8_t span)
+{
+    uint8_t base = text_tile_next;
+
+    if(span == 0) {
+        return base;
+    }
+
+    if((uint16_t)base + span > TEXT_TILE_ARENA_LIMIT) {
+        debug_log("game: text tile arena exhausted");
+        return TEXT_TILE_ARENA_BASE;
+    }
+
+    text_tile_next = (uint8_t)(text_tile_next + span);
+    return base;
+}
+
+static void draw_text_strip(uint8_t map_x, uint8_t map_y,
     const char *text, uint8_t fg, uint8_t bg)
 {
     uint8_t span = text_tile_span(text);
+    uint8_t base_tile = alloc_text_tiles(span);
 
     clear_text_tiles(bg, span);
     draw_text(0, 4, text, fg);
@@ -33,24 +62,43 @@ static void draw_text_strip(uint8_t base_tile, uint8_t map_x, uint8_t map_y,
     }
 }
 
+static void draw_text_pair(uint8_t map_x, uint8_t map_y,
+    const char *top_text, const char *bottom_text, uint8_t fg, uint8_t bg)
+{
+    uint8_t span = max_u8(text_tile_span(top_text), text_tile_span(bottom_text));
+    uint8_t base_tile = alloc_text_tiles(span);
+
+    clear_text_tiles(bg, span);
+    draw_text(0, 0, top_text, fg);
+    draw_text(0, 8, bottom_text, fg);
+    render_text(base_tile, span);
+
+    for(uint8_t i = 0; i < span; i++) {
+        draw_tilemap((uint16_t)(map_x + i), map_y, (uint8_t)(base_tile + i));
+    }
+}
+
+static void draw_bet_entry(uint8_t icon_tile, uint8_t marker_tile, uint8_t map_y,
+    const char *text)
+{
+    draw_tilemap(1, map_y, icon_tile);
+    draw_tilemap(2, map_y, marker_tile);
+    draw_text_strip(4, map_y, text, COL_WHITE, COL_BLACK);
+}
+
+static uint8_t selected_row_y(void)
+{
+    return (uint8_t)(6u + (game.cursor_y & 0x03u));
+}
+
 static void draw_template_screen(void)
 {
     fill_tilemap(TILE_COLOR_BLACK, 0, 0, TILES_ACROSS, TILES_DOWN);
+    reset_text_tile_arena();
 
-    for(uint8_t x = 0; x < TILES_ACROSS; x++) {
-        draw_tilemap(x, 0, (uint8_t)(TILE_COLOR_TITLE + (x % 17u)));
-    }
-
-    draw_tilemap(0, 13, TILE_HUD_LABEL_RACE);
-    draw_tilemap(1, 13, TILE_HUD_LABEL_BANK);
-    draw_tilemap(2, 13, TILE_HUD_LABEL_ODDS);
-    draw_tilemap(3, 13, TILE_HUD_LABEL_POST);
-    draw_tilemap(4, 13, TILE_HUD_LABEL_WIN);
-    draw_tilemap(5, 13, TILE_HUD_LABEL_EXACTA);
-    draw_tilemap(6, 13, TILE_HUD_LABEL_MUD);
-    draw_tilemap(7, 13, TILE_HUD_LABEL_TURF);
-    for(uint8_t x = 8; x < TILES_ACROSS; x++) {
-        draw_tilemap(x, 13, (uint8_t)(TILE_HUD_PANEL_FRAME_0 + ((x - 8u) & 0x03u)));
+    for(uint8_t x = 0; x < 17u; x++) {
+        draw_tilemap((uint8_t)(x + 1u), 0, (uint8_t)(TILE_COLOR_TITLE + x));
+        draw_tilemap((uint8_t)(x + 1u), 1, (uint8_t)(TILE_COLOR_TITLE + 17u + x));
     }
 
     static const uint8_t prototype_track_row[] = {
@@ -75,27 +123,28 @@ static void draw_template_screen(void)
         TILE_TRACK_UTIL_POST_3,
         TILE_TRACK_UTIL_DRY_0,
     };
-    draw_tilemap_array(0, 10, (uint8_t *)prototype_track_row, sizeof(prototype_track_row));
-
-    draw_tilemap(0, 14, TILE_HUD_HORSE_WHITE);
-    draw_tilemap(1, 14, TILE_HUD_HORSE_GREEN);
-    draw_tilemap(2, 14, TILE_HUD_HORSE_GOLD);
-    draw_tilemap(3, 14, TILE_HUD_HORSE_RED);
-    draw_tilemap(4, 14, TILE_HUD_MARKER_FIRST);
-    draw_tilemap(5, 14, TILE_HUD_MARKER_SECOND);
-    draw_tilemap(6, 14, TILE_HUD_PP_TIME);
-    draw_tilemap(7, 14, TILE_HUD_PP_FINISH);
-    for(uint8_t x = 8; x < TILES_ACROSS; x++) {
-        draw_tilemap(x, 14, (uint8_t)(TILE_HUD_PANEL_FRAME_0 + ((x - 8u) & 0x03u)));
-    }
+    draw_tilemap_array(0, 11, (uint8_t *)prototype_track_row, sizeof(prototype_track_row));
 
     set_font(FONT_NICETY_BOLD);
-    draw_text_strip(TEMPLATE_TEXT_TILE, 2, 2, "HORSE RACING", COL_WHITE, COL_BLACK);
+    draw_text_pair(3, 3,
+        "BET SHEET",
+        "R1 DRY 6F  $750",
+        COL_WHITE, COL_BLACK);
     set_font(FONT_NICETY);
-    draw_text_strip(TEMPLATE_NOTE_TILE, 1, 5, "betting + race tiles loaded", COL_WHITE, COL_BLACK);
-    draw_text_strip((uint8_t)(TEMPLATE_NOTE_TILE + 14u), 1, 7, "TODO: past performances", COL_WHITE, COL_BLACK);
-    draw_text_strip((uint8_t)(TEMPLATE_NOTE_TILE + 26u), 1, 9, "TODO: live race logic", COL_WHITE, COL_BLACK);
-    draw_text_strip((uint8_t)(TEMPLATE_NOTE_TILE + 36u), 1, 12, "SNES or keyboard moves cursor", COL_LIGHT_GRAY, COL_BLACK);
+    draw_text_pair(4, 6,
+        "WIN WHITE",
+        "HORSE    ODDS",
+        COL_LIGHT_GRAY, COL_BLACK);
+
+    draw_bet_entry(TILE_HUD_HORSE_WHITE, TILE_HUD_MARKER_FIRST, 7, "WHITE   3-1");
+    draw_bet_entry(TILE_HUD_HORSE_GREEN, TILE_HUD_MARKER_SECOND, 8, "GREEN   4-1");
+    draw_bet_entry(TILE_HUD_HORSE_GOLD, TILE_HUD_PP_TIME, 9, "GOLD    5-1");
+    draw_bet_entry(TILE_HUD_HORSE_RED, TILE_HUD_PP_FINISH, 10, "RED     6-1");
+
+    draw_text_pair(1, 13,
+        "A BET  Y FORM",
+        "START  B BACK",
+        COL_LIGHT_GRAY, COL_BLACK);
 
     render_tilemap(0);
     render_tilemap(1);
@@ -109,6 +158,10 @@ void game_show_dialog(const char *text)
 
 void resume_game(void)
 {
+    fill_tilemap(TILE_COLOR_BLACK, 0, 0, TILES_ACROSS, TILES_DOWN);
+    render_tilemap(1);
+    render_tilemap(0);
+
     draw_template_screen();
 }
 
@@ -119,8 +172,8 @@ void init_game(void)
     memset(held, 0, sizeof(held));
     memset(&game, 0, sizeof(game));
 
-    game.cursor_x = 10;
-    game.cursor_y = 8;
+    game.cursor_x = 0;
+    game.cursor_y = 0;
 
     clear_sprites();
     resume_game();
@@ -148,15 +201,13 @@ void input_game(uint8_t key, bool down)
             break;
 
         case INPUT_DOWN:
-            if(game.cursor_y + 1u < TILES_DOWN) game.cursor_y++;
+            if(game.cursor_y < 3u) game.cursor_y++;
             break;
 
         case INPUT_LEFT:
-            if(game.cursor_x > 0) game.cursor_x--;
             break;
 
         case INPUT_RIGHT:
-            if(game.cursor_x + 1u < TILES_ACROSS) game.cursor_x++;
             break;
 
         case INPUT_SELECT:
@@ -187,9 +238,9 @@ void update_game(void)
 
 void draw_game(void)
 {
-    // Sample sprite usage only. The cursor is a stand-in for a future horse, selector, or UI marker.
+    // Row selector for the current betting entry.
     reset_sprite();
-    add_sprite((uint16_t)game.cursor_x * 16u, (uint8_t)(game.cursor_y * 16u), TILE_CURSOR);
+    add_sprite(0, (uint8_t)(selected_row_y() * 16u), TILE_CURSOR);
     render_sprites();
 }
 
@@ -197,6 +248,7 @@ void init_gameover(void)
 {
     fill_tilemap(TILE_COLOR_BLACK, 0, 0, TILES_ACROSS, TILES_DOWN);
     render_tilemap(1);
+    render_tilemap(0);
 
     for(uint8_t y = 0; y < TILES_DOWN; y++) {
         for(uint8_t x = 0; x < TILES_ACROSS; x++) {
@@ -205,9 +257,9 @@ void init_gameover(void)
     }
 
     set_font(FONT_NICETY_BOLD);
-    draw_text_strip(0x90u, 6, 5, "TODO", COL_RED, COL_DARK_RED);
+    draw_text_strip(6, 5, "TODO", COL_RED, COL_DARK_RED);
     set_font(FONT_NICETY);
-    draw_text_strip(0x94u, 2, 8, "replace with game-over/results", COL_WHITE, COL_BLACK);
+    draw_text_strip(2, 8, "replace with game-over/results", COL_WHITE, COL_BLACK);
 
     render_tilemap(0);
     clear_sprites();
