@@ -8,7 +8,7 @@
 #include "text.h"
 
 #define ARROW_TILE        0xAF
-#define MENU_TEXT_BASE    ((uint8_t)0xD0u)
+#define MENU_TEXT_BASE    ((uint8_t)0xB0u)
 #define MENU_TEXT_LIMIT   ((uint8_t)0xFFu)
 
 #define MAX_BLINK_TIMER 8
