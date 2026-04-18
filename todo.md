@@ -34,7 +34,7 @@ The MVP is the smallest version that delivers the complete original game loop:
 - [ ] Support all-CPU races.
 - [ ] Support one human-controlled outside horse.
 - [ ] Support two human-controlled outside horses when two controllers are available.
-- [ ] Implement the starting gate sequence.
+- [x] Implement the starting gate sequence.
 - [ ] Implement a side-view race screen with four horses visible.
 - [ ] Implement horizontal race progression with independent foreground and background scrolling.
 - [ ] Implement four race lanes with inside-lane advantage.
@@ -110,7 +110,7 @@ Build these in order. Later steps should not start until their prerequisites are
 - [ ] Support all-CPU races.
 - [ ] Support one human-controlled outside horse.
 - [ ] Support two human-controlled outside horses when two controllers are present.
-- [ ] Implement the starting gate sequence.
+- [x] Implement the starting gate sequence.
 
 #### Step 6: Core Race Simulation
 
@@ -265,7 +265,7 @@ Get the race itself running with minimal presentation but correct gameplay behav
 
 Tasks:
 
-- [ ] Implement the starting gate sequence.
+- [x] Implement the starting gate sequence.
 - [ ] Implement side-view race simulation for 4 horses.
 - [ ] Implement foreground and background scrolling.
 - [ ] Implement four race lanes with inside-lane advantage.

@@ -47,6 +47,7 @@ enum RaceFlowPhase
 {
     RACE_FLOW_BETTING,
     RACE_FLOW_JOCKEY_SETUP,
+    RACE_FLOW_START_GATE,
 };
 
 enum JockeyAssignment

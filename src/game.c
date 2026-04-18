@@ -651,6 +651,11 @@ static void begin_jockey_setup(void)
     game.session.flow_phase = RACE_FLOW_JOCKEY_SETUP;
 }
 
+static void begin_start_gate(void)
+{
+    game.session.flow_phase = RACE_FLOW_START_GATE;
+}
+
 static void cancel_jockey_setup(void)
 {
     game.session.flow_phase = RACE_FLOW_BETTING;
@@ -659,6 +664,16 @@ static void cancel_jockey_setup(void)
 static void confirm_jockey_setup(void)
 {
     game.session.jockey_count = (game.session.jockey_assignment == JOCKEY_ASSIGN_CPU) ? 0u : 1u;
+    begin_start_gate();
+}
+
+static void cancel_start_gate(void)
+{
+    game.session.flow_phase = RACE_FLOW_JOCKEY_SETUP;
+}
+
+static void confirm_start_gate(void)
+{
     set_state(GAME_STATE_GAMEOVER);
 }
 
@@ -705,6 +720,27 @@ static void refresh_betting_text_blocks(void)
     const char *help_bottom;
     const char *state_label;
     const char *horse_label = "HORSE";
+
+    if(game.session.flow_phase == RACE_FLOW_START_GATE) {
+        sprintf(title_line, "AT GATE");
+        sprintf(summary_line, "R%u %s %uF  %s",
+            (unsigned)(game.session.current_race + 1u),
+            surface_name[race->surface],
+            (unsigned)race->distance_furlongs,
+            jockey_control_label());
+
+        set_font(FONT_NICETY_BOLD);
+        text_update_pair_block(&betting_summary_block, title_line, summary_line);
+        set_font(FONT_NICETY);
+        update_jockey_block(&betting_wager_block,
+            "GATE",
+            jockey_horse_label(),
+            "GO");
+        text_update_pair_block(&betting_help_block,
+            "START BREAK  B BACK",
+            "A BREAK     GO RACE");
+        return;
+    }
 
     if(game.session.flow_phase == RACE_FLOW_JOCKEY_SETUP) {
         sprintf(title_line, "JOCKEY SET");
@@ -913,6 +949,24 @@ void input_game(uint8_t key, bool down)
 
             case INPUT_B:
                 cancel_jockey_setup();
+                refresh_betting_text_blocks();
+                break;
+
+            default:
+                break;
+        }
+        return;
+    }
+
+    if(game.session.flow_phase == RACE_FLOW_START_GATE) {
+        switch(key) {
+            case INPUT_A:
+            case INPUT_START:
+                confirm_start_gate();
+                break;
+
+            case INPUT_B:
+                cancel_start_gate();
                 refresh_betting_text_blocks();
                 break;
 
