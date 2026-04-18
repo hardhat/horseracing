@@ -43,6 +43,13 @@ static void draw_title_banner(void)
     }
 }
 
+static void init_menu_arrow_tile(void)
+{
+    clear_text_tiles(COL_BLACK, 1);
+    draw_text(0, 4, "<", COL_WHITE);
+    render_text(ARROW_TILE, 1);
+}
+
 static void update_title_screen_blocks(void)
 {
     title_prompt_block.bg = prompt_bg;
@@ -75,6 +82,7 @@ static void build_menu_layout(void)
     clear_sprites();
 
     draw_title_banner();
+    init_menu_arrow_tile();
     text_reset_arena(MENU_TEXT_BASE, MENU_TEXT_LIMIT);
 
     set_font(FONT_NICETY_BOLD);
