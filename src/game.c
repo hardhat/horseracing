@@ -16,6 +16,12 @@ struct Game game;
 
 static bool held[MAX_INPUT];
 static uint16_t session_rng = 0x43E7u;
+static bool race_held[MAX_INPUT];
+static uint8_t race_progress[4];
+static uint8_t race_finish_order[4];
+static uint8_t race_finish_count;
+static uint8_t race_controlled_entry;
+static uint16_t race_tick;
 
 static struct TextPairBlock betting_summary_block;
 static struct TextPairBlock betting_wager_block;
@@ -61,6 +67,8 @@ static const uint8_t distance_groups[4][2] = {
     {7u, 8u},
     {9u, 10u},
 };
+
+static const uint8_t race_lane_y[4] = { 4u, 6u, 8u, 10u };
 
 static void copy_padded_text(char *buffer, uint8_t width, const char *value)
 {
@@ -707,6 +715,116 @@ static uint8_t entry_marker_tile(uint8_t entry_index)
     }
 }
 
+static uint8_t surface_track_tile(uint8_t surface)
+{
+    switch(surface) {
+        case SURFACE_MUDDY:
+            return TILE_TRACK_MUD_CLEAR_0;
+
+        case SURFACE_TURF:
+            return TILE_TRACK_TURF_CLEAR_0;
+
+        // case SURFACE_DRY:
+        default:
+            return TILE_TRACK_DRY_CLEAR_0;
+    }
+}
+
+static uint8_t surface_finish_tile(uint8_t surface)
+{
+    switch(surface) {
+        case SURFACE_MUDDY:
+            return TILE_TRACK_MUD_FINISH;
+
+        case SURFACE_TURF:
+            return TILE_TRACK_TURF_FINISH;
+
+        // case SURFACE_DRY:
+        default:
+            return TILE_TRACK_DRY_FINISH;
+    }
+}
+
+static uint8_t controlled_race_entry(void)
+{
+    switch(game.session.jockey_assignment) {
+        case JOCKEY_ASSIGN_OUTSIDE_1:
+            return 0u;
+
+        case JOCKEY_ASSIGN_OUTSIDE_4:
+            return 3u;
+
+        // case JOCKEY_ASSIGN_CPU:
+        default:
+            return 0xFFu;
+    }
+}
+
+static void render_race_prototype_rows(void)
+{
+    struct RaceCard *race = &game.session.races[game.session.current_race];
+    uint8_t track_tile = surface_track_tile(race->surface);
+    uint8_t finish_tile = surface_finish_tile(race->surface);
+
+    for(uint8_t i = 0; i < 4u; i++) {
+        uint8_t y = race_lane_y[i];
+        uint8_t horse_x = (uint8_t)(2u + race_progress[i]);
+        struct RaceEntry *entry = &race->entries[i];
+        struct Horse *horse = &game.session.stable[entry->horse_index];
+
+        fill_tilemap(track_tile, 0, y, TILES_ACROSS, 1);
+        draw_tilemap(0, y, entry_marker_tile(i));
+        draw_tilemap(19, y, finish_tile);
+        if(horse_x > 18u) {
+            horse_x = 18u;
+        }
+        draw_tilemap(horse_x, y, horse_icon_tile(horse->color));
+    }
+
+    render_tilemap(0);
+}
+
+static void advance_race_entry(uint8_t entry_index, uint8_t distance)
+{
+    uint8_t max_progress = 16u;
+
+    if(race_progress[entry_index] >= max_progress) {
+        return;
+    }
+
+    while(distance-- != 0u && race_progress[entry_index] < max_progress) {
+        race_progress[entry_index]++;
+    }
+
+    if(race_progress[entry_index] >= max_progress) {
+        race_progress[entry_index] = max_progress;
+        race_finish_order[race_finish_count] = entry_index;
+        race_finish_count++;
+    }
+}
+
+static uint8_t race_step_distance(uint8_t entry_index)
+{
+    struct RaceCard *race = &game.session.races[game.session.current_race];
+    struct RaceEntry *entry = &race->entries[entry_index];
+    uint8_t distance = 1u;
+
+    if(entry->odds <= 4u && (race_tick & 0x01u) == 0u) {
+        distance++;
+    }
+
+    if(entry_index == race_controlled_entry) {
+        if(race_held[INPUT_Y]) {
+            distance++;
+        }
+        if(race_held[INPUT_B]) {
+            distance = (uint8_t)(distance + 2u);
+        }
+    }
+
+    return distance;
+}
+
 static void refresh_betting_text_blocks(void)
 {
     struct RaceCard *race = &game.session.races[game.session.current_race];
@@ -1126,30 +1244,59 @@ void draw_game(void)
 
 void init_gameover(void)
 {
+    struct RaceCard *race = &game.session.races[game.session.current_race];
+    char header_line[24];
+
     fill_tilemap(TILE_COLOR_BLACK, 0, 0, TILES_ACROSS, TILES_DOWN);
     render_tilemap(1);
     render_tilemap(0);
 
     text_reset_arena(TEXT_TILE_ARENA_BASE, TEXT_TILE_ARENA_LIMIT);
+    memset(race_held, 0, sizeof(race_held));
+    memset(race_progress, 0, sizeof(race_progress));
+    memset(race_finish_order, 0xFF, sizeof(race_finish_order));
+    race_finish_count = 0u;
+    race_controlled_entry = controlled_race_entry();
+    race_tick = 0u;
 
-    for(uint8_t y = 0; y < TILES_DOWN; y++) {
-        for(uint8_t x = 0; x < TILES_ACROSS; x++) {
-            draw_tilemap(x, y, (uint8_t)(TILE_COLOR_WHITE + ((x + y) & 0x03u)));
-        }
-    }
+    fill_tilemap(TILE_COLOR_BLACK, 0, 0, TILES_ACROSS, TILES_DOWN);
+    fill_tilemap(TILE_TRACK_UTIL_DRY_0, 0, 2, TILES_ACROSS, 1);
+    fill_tilemap(TILE_TRACK_UTIL_RAIL_CURVE_0, 0, 12, TILES_ACROSS, 1);
+
+    sprintf(header_line, "R%u %s %uF",
+        (unsigned)(game.session.current_race + 1u),
+        surface_name[race->surface],
+        (unsigned)race->distance_furlongs);
 
     set_font(FONT_NICETY_BOLD);
-    text_draw_strip_alloc(6, 5, "TODO", COL_RED, COL_DARK_RED, 4, false);
+    text_draw_strip_alloc(2, 0, "RACE PROTOTYPE", COL_WHITE, COL_BLACK, 4, false);
     set_font(FONT_NICETY);
-    text_draw_strip_alloc(2, 8, "replace with game-over/results", COL_WHITE, COL_BLACK, 4, false);
+    text_draw_strip_alloc(5, 1, header_line, COL_LIGHT_GRAY, COL_BLACK, 4, false);
+    if(race_controlled_entry == 0xFFu) {
+        text_draw_pair_alloc(3, 13,
+            "CPU RACE",
+            "START EXIT",
+            COL_LIGHT_GRAY, COL_BLACK);
+    } else {
+        text_draw_pair_alloc(2, 13,
+            "Y COAX B WHIP",
+            "START EXIT",
+            COL_LIGHT_GRAY, COL_BLACK);
+    }
+
+    render_race_prototype_rows();
 
     render_tilemap(0);
     clear_sprites();
-    debug_log("game: placeholder game-over screen");
+    debug_log("game: race prototype screen");
 }
 
 void input_gameover(uint8_t key, bool down)
 {
+    if(key < MAX_INPUT) {
+        race_held[key] = down;
+    }
+
     if(down && key == INPUT_START) {
         set_state(GAME_STATE_MENU);
     }
@@ -1157,6 +1304,17 @@ void input_gameover(uint8_t key, bool down)
 
 void update_gameover(void)
 {
+    race_tick++;
+
+    if((race_tick & 0x07u) != 0u || race_finish_count >= 4u) {
+        return;
+    }
+
+    for(uint8_t i = 0; i < 4u; i++) {
+        advance_race_entry(i, race_step_distance(i));
+    }
+
+    render_race_prototype_rows();
 }
 
 void draw_gameover(void)

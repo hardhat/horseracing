@@ -31,11 +31,11 @@ The MVP is the smallest version that delivers the complete original game loop:
 - [ ] Show enough past data to compare distance, surface, time, and finish summary.
 - [ ] Support switching between betting and past performance views during betting.
 - [x] Implement jockey assignment before each race.
-- [ ] Support all-CPU races.
-- [ ] Support one human-controlled outside horse.
+- [x] Support all-CPU races.
+- [x] Support one human-controlled outside horse.
 - [ ] Support two human-controlled outside horses when two controllers are available.
 - [x] Implement the starting gate sequence.
-- [ ] Implement a side-view race screen with four horses visible.
+- [x] Implement a side-view race screen with four horses visible.
 - [ ] Implement horizontal race progression with independent foreground and background scrolling.
 - [ ] Implement four race lanes with inside-lane advantage.
 - [ ] Implement lane changing for human jockeys.
@@ -107,8 +107,8 @@ Build these in order. Later steps should not start until their prerequisites are
 #### Step 5: Jockey Assignment And Race Setup
 
 - [x] Implement jockey assignment before each race.
-- [ ] Support all-CPU races.
-- [ ] Support one human-controlled outside horse.
+- [x] Support all-CPU races.
+- [x] Support one human-controlled outside horse.
 - [ ] Support two human-controlled outside horses when two controllers are present.
 - [x] Implement the starting gate sequence.
 
@@ -294,8 +294,8 @@ Connect betting, racing, results, and progression into a full 10-race game.
 Tasks:
 
 - [x] Implement jockey assignment before each race.
-- [ ] Support all-CPU races.
-- [ ] Support one human-controlled outside horse.
+- [x] Support all-CPU races.
+- [x] Support one human-controlled outside horse.
 - [ ] Support two human-controlled outside horses when two controllers are present.
 - [ ] Display tote-board-style race results.
 - [ ] Settle Win and Exacta payouts.
