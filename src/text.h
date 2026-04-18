@@ -4,6 +4,8 @@
 #include <stdbool.h>
 #include <stdint.h>
 
+#define TEXT_STRIP_CACHE_CHARS 33
+
 struct TextStripBlock {
     uint8_t base_tile;
     uint8_t span;
@@ -13,6 +15,12 @@ struct TextStripBlock {
     uint8_t bg;
     uint8_t pixel_y;
     uint8_t opaque;
+    uint8_t has_rendered;
+    uint8_t cached_fg;
+    uint8_t cached_bg;
+    uint8_t cached_pixel_y;
+    uint8_t cached_opaque;
+    char cached_text[TEXT_STRIP_CACHE_CHARS];
 };
 
 struct TextPairBlock {
@@ -36,7 +44,7 @@ void text_draw_pair_alloc(uint8_t map_x, uint8_t map_y,
 void text_init_strip_block(struct TextStripBlock *block,
     uint8_t map_x, uint8_t map_y, uint8_t span,
     uint8_t fg, uint8_t bg, uint8_t pixel_y, bool opaque);
-void text_update_strip_block(const struct TextStripBlock *block, const char *text);
+void text_update_strip_block(struct TextStripBlock *block, const char *text);
 
 void text_init_pair_block(struct TextPairBlock *block,
     uint8_t map_x, uint8_t map_y, uint8_t span, uint8_t fg, uint8_t bg);

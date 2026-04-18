@@ -13,6 +13,35 @@ static uint8_t max_u8(uint8_t a, uint8_t b)
     return (a > b) ? a : b;
 }
 
+static void cache_strip_text(struct TextStripBlock *block, const char *text)
+{
+    uint8_t max_chars = (uint8_t)(block->span << 1);
+    size_t length = strlen(text);
+
+    if(max_chars >= TEXT_STRIP_CACHE_CHARS) {
+        max_chars = (uint8_t)(TEXT_STRIP_CACHE_CHARS - 1u);
+    }
+    if(length > max_chars) {
+        length = max_chars;
+    }
+
+    memcpy(block->cached_text, text, length);
+    block->cached_text[length] = '\0';
+}
+
+static bool strip_block_is_unchanged(const struct TextStripBlock *block, const char *text)
+{
+    if(!block->has_rendered) {
+        return false;
+    }
+
+    return block->cached_fg == block->fg
+        && block->cached_bg == block->bg
+        && block->cached_pixel_y == block->pixel_y
+        && block->cached_opaque == block->opaque
+        && strcmp(block->cached_text, text) == 0;
+}
+
 uint8_t text_measure_span(const char *text)
 {
     size_t len = strlen(text);
@@ -73,21 +102,38 @@ void text_init_strip_block(struct TextStripBlock *block,
     block->bg = bg;
     block->pixel_y = pixel_y;
     block->opaque = opaque ? 1u : 0u;
+    block->has_rendered = 0u;
+    block->cached_fg = 0u;
+    block->cached_bg = 0u;
+    block->cached_pixel_y = 0u;
+    block->cached_opaque = 0u;
+    block->cached_text[0] = '\0';
 
     for(uint8_t i = 0; i < span; i++) {
         draw_tilemap((uint16_t)(map_x + i), map_y, (uint8_t)(block->base_tile + i));
     }
 }
 
-void text_update_strip_block(const struct TextStripBlock *block, const char *text)
+void text_update_strip_block(struct TextStripBlock *block, const char *text)
 {
-    clear_text_tiles(block->bg, block->span);
+    if(strip_block_is_unchanged(block, text)) {
+        return;
+    }
+
+    clear_text_tiles(block->opaque ? COL_BLACK : block->bg, block->span);
     if(block->opaque) {
         draw_text_opaque(0, block->pixel_y, text, block->fg, block->bg);
     } else {
         draw_text(0, block->pixel_y, text, block->fg);
     }
     render_text(block->base_tile, block->span);
+
+    block->has_rendered = 1u;
+    block->cached_fg = block->fg;
+    block->cached_bg = block->bg;
+    block->cached_pixel_y = block->pixel_y;
+    block->cached_opaque = block->opaque;
+    cache_strip_text(block, text);
 }
 
 void text_init_pair_block(struct TextPairBlock *block,
