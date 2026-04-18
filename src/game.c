@@ -15,6 +15,7 @@ struct Game game;
 
 static bool held[MAX_INPUT];
 static uint8_t text_tile_next;
+static uint16_t session_rng = 0x43E7u;
 
 struct TextPairBlock {
     uint8_t base_tile;
@@ -62,6 +63,13 @@ static const char *const bet_type_name[] = {
     "EXA",
 };
 
+static const uint8_t distance_groups[4][2] = {
+    {3u, 4u},
+    {5u, 6u},
+    {7u, 8u},
+    {9u, 10u},
+};
+
 static void copy_padded_text(char *buffer, uint8_t width, const char *value)
 {
     uint8_t length = (uint8_t)strlen(value);
@@ -84,6 +92,25 @@ static uint8_t text_tile_span(const char *text)
 static uint8_t max_u8(uint8_t a, uint8_t b)
 {
     return (a > b) ? a : b;
+}
+
+static uint16_t next_random_u16(void)
+{
+    session_rng = (uint16_t)(session_rng * 25173u + 13849u);
+    return session_rng;
+}
+
+static uint8_t random_below(uint8_t limit)
+{
+    if(limit == 0u) {
+        return 0u;
+    }
+    return (uint8_t)(next_random_u16() % limit);
+}
+
+static uint8_t random_range_u8(uint8_t min_value, uint8_t max_value)
+{
+    return (uint8_t)(min_value + random_below((uint8_t)(max_value - min_value + 1u)));
 }
 
 static void reset_text_tile_arena(void)
@@ -300,6 +327,166 @@ static void cycle_selected_horse(struct Wager *wager, int8_t delta)
     sync_selected_entry();
 }
 
+static void seed_next_session(void)
+{
+    session_rng ^= (uint16_t)(session_rng << 7);
+    session_rng ^= (uint16_t)(session_rng >> 9);
+    session_rng ^= 0x9E37u;
+    if(session_rng == 0u) {
+        session_rng = 0x43E7u;
+    }
+}
+
+static void init_horse(struct Horse *horse, uint8_t color)
+{
+    uint8_t style = random_below(3u);
+    uint8_t stamina_bias = random_below(3u);
+
+    memset(horse, 0, sizeof(*horse));
+    horse->color = color;
+
+    horse->traits.break_speed = random_range_u8(5u, 10u);
+    horse->traits.early_pace = random_range_u8(5u, 10u);
+    horse->traits.endurance = random_range_u8(5u, 10u);
+    horse->traits.stretch_speed = random_range_u8(5u, 10u);
+
+    if(style == 0u) {
+        horse->traits.break_speed = random_range_u8(9u, 12u);
+        horse->traits.early_pace = random_range_u8(8u, 12u);
+    } else if(style == 1u) {
+        horse->traits.endurance = random_range_u8(8u, 12u);
+        horse->traits.stretch_speed = random_range_u8(8u, 12u);
+    } else {
+        horse->traits.break_speed = random_range_u8(6u, 11u);
+        horse->traits.stretch_speed = random_range_u8(6u, 11u);
+    }
+
+    if(stamina_bias == 0u) {
+        horse->traits.endurance = random_range_u8(9u, 12u);
+    } else if(stamina_bias == 1u) {
+        horse->traits.surface_affinity[SURFACE_MUDDY] = random_range_u8(9u, 12u);
+    }
+
+    for(uint8_t surface = 0; surface < SURFACE_COUNT; surface++) {
+        if(horse->traits.surface_affinity[surface] == 0u) {
+            horse->traits.surface_affinity[surface] = random_range_u8(5u, 12u);
+        }
+    }
+}
+
+static uint16_t projected_horse_score(const struct Horse *horse, uint8_t surface, uint8_t distance_furlongs)
+{
+    uint16_t score = horse->traits.surface_affinity[surface];
+
+    score = (uint16_t)(score + horse->traits.early_pace + horse->traits.stretch_speed);
+
+    if(distance_furlongs <= 4u) {
+        score = (uint16_t)(score + horse->traits.break_speed + (horse->traits.early_pace >> 1));
+    } else if(distance_furlongs <= 6u) {
+        score = (uint16_t)(score + horse->traits.break_speed + horse->traits.endurance);
+    } else if(distance_furlongs <= 8u) {
+        score = (uint16_t)(score + horse->traits.endurance + horse->traits.stretch_speed);
+    } else {
+        score = (uint16_t)(score + (horse->traits.endurance << 1) + horse->traits.stretch_speed);
+    }
+
+    return score;
+}
+
+static void choose_race_entries(struct RaceCard *race)
+{
+    uint8_t shuffled[HORSE_COLOR_COUNT];
+
+    for(uint8_t i = 0; i < HORSE_COLOR_COUNT; i++) {
+        shuffled[i] = i;
+    }
+
+    for(uint8_t i = 0; i < HORSE_COLOR_COUNT; i++) {
+        uint8_t swap_index = (uint8_t)(i + random_below((uint8_t)(HORSE_COLOR_COUNT - i)));
+        uint8_t tmp = shuffled[i];
+        shuffled[i] = shuffled[swap_index];
+        shuffled[swap_index] = tmp;
+    }
+
+    for(uint8_t i = 0; i < 4u; i++) {
+        race->entries[i].horse_index = shuffled[i];
+        race->entries[i].lane = i;
+    }
+}
+
+static void assign_race_odds(struct RaceCard *race)
+{
+    static const uint8_t odds_by_rank[4] = { 3u, 4u, 5u, 6u };
+    uint8_t order[4] = { 0u, 1u, 2u, 3u };
+    uint16_t score[4];
+
+    for(uint8_t i = 0; i < 4u; i++) {
+        score[i] = projected_horse_score(&game.session.stable[race->entries[i].horse_index],
+            race->surface,
+            race->distance_furlongs);
+    }
+
+    for(uint8_t i = 0; i < 3u; i++) {
+        for(uint8_t j = (uint8_t)(i + 1u); j < 4u; j++) {
+            uint8_t left = order[i];
+            uint8_t right = order[j];
+
+            if(score[right] > score[left]
+                || (score[right] == score[left]
+                    && race->entries[right].horse_index < race->entries[left].horse_index)) {
+                uint8_t tmp = order[i];
+                order[i] = order[j];
+                order[j] = tmp;
+            }
+        }
+    }
+
+    for(uint8_t i = 0; i < 4u; i++) {
+        race->entries[order[i]].odds = odds_by_rank[i];
+    }
+}
+
+static void init_generated_session(void)
+{
+    memset(&game.session, 0, sizeof(game.session));
+    seed_next_session();
+
+    game.session.bettor_count = 1;
+    game.session.jockey_count = 0;
+    game.session.current_race = 0;
+    game.session.active_bettor = 0;
+    game.session.selected_entry = 0;
+    game.session.selected_field = BETTING_FIELD_HORSE;
+
+    game.session.bettors[0].bankroll = 750;
+    game.session.bettors[0].active = 1;
+
+    for(uint8_t i = 0; i < HORSE_COLOR_COUNT; i++) {
+        init_horse(&game.session.stable[i], i);
+    }
+
+    for(uint8_t i = 0; i < 6u; i++) {
+        game.session.wagers[i].amount = 50;
+        game.session.wagers[i].bettor_index = i;
+        game.session.wagers[i].type = BET_TYPE_WIN;
+        game.session.wagers[i].first_pick = 0;
+        game.session.wagers[i].second_pick = 1;
+        game.session.wagers[i].confirmed = 0;
+    }
+
+    for(uint8_t race_index = 0; race_index < 10u; race_index++) {
+        uint8_t group_index = random_below(4u);
+        struct RaceCard *race = &game.session.races[race_index];
+
+        memset(race, 0, sizeof(*race));
+        race->surface = random_below(SURFACE_COUNT);
+        race->distance_furlongs = distance_groups[group_index][random_below(2u)];
+
+        choose_race_entries(race);
+        assign_race_odds(race);
+    }
+}
+
 static void commit_wager(struct Bettor *bettor, struct Wager *wager)
 {
     uint16_t max_amount = bettor->bankroll;
@@ -346,50 +533,6 @@ static uint8_t entry_marker_tile(uint8_t entry_index)
         default:
             return TILE_HUD_PP_FINISH;
     }
-}
-
-static void init_test_session(void)
-{
-    memset(&game.session, 0, sizeof(game.session));
-
-    game.session.bettor_count = 1;
-    game.session.jockey_count = 0;
-    game.session.current_race = 0;
-    game.session.active_bettor = 0;
-    game.session.selected_entry = 0;
-    game.session.selected_field = BETTING_FIELD_HORSE;
-
-    game.session.bettors[0].bankroll = 750;
-    game.session.bettors[0].active = 1;
-
-    for(uint8_t i = 0; i < 8; i++) {
-        game.session.stable[i].color = i;
-        game.session.stable[i].traits.break_speed = (uint8_t)(5u + i);
-        game.session.stable[i].traits.early_pace = (uint8_t)(6u + i);
-        game.session.stable[i].traits.endurance = (uint8_t)(12u - i);
-        game.session.stable[i].traits.stretch_speed = (uint8_t)(7u + (i & 0x03u));
-        game.session.stable[i].traits.surface_affinity[SURFACE_DRY] = (uint8_t)(8u + (i & 0x01u));
-        game.session.stable[i].traits.surface_affinity[SURFACE_MUDDY] = (uint8_t)(6u + ((i + 1u) & 0x01u));
-        game.session.stable[i].traits.surface_affinity[SURFACE_TURF] = (uint8_t)(7u + ((i + 2u) & 0x01u));
-    }
-
-    game.session.wagers[0].amount = 50;
-    game.session.wagers[0].bettor_index = 0;
-    game.session.wagers[0].type = BET_TYPE_WIN;
-    game.session.wagers[0].first_pick = 0;
-    game.session.wagers[0].second_pick = 1;
-    game.session.wagers[0].confirmed = 0;
-
-    game.session.races[0].surface = SURFACE_DRY;
-    game.session.races[0].distance_furlongs = 6;
-    game.session.races[0].entries[0].horse_index = HORSE_COLOR_WHITE;
-    game.session.races[0].entries[0].odds = 3;
-    game.session.races[0].entries[1].horse_index = HORSE_COLOR_GREEN;
-    game.session.races[0].entries[1].odds = 4;
-    game.session.races[0].entries[2].horse_index = HORSE_COLOR_GOLD;
-    game.session.races[0].entries[2].odds = 5;
-    game.session.races[0].entries[3].horse_index = HORSE_COLOR_RED;
-    game.session.races[0].entries[3].odds = 6;
 }
 
 static void refresh_betting_text_blocks(void)
@@ -515,7 +658,7 @@ void init_game(void)
     memset(held, 0, sizeof(held));
     memset(&game, 0, sizeof(game));
 
-    init_test_session();
+    init_generated_session();
 
     game.cursor_x = 0;
     game.cursor_y = 0;

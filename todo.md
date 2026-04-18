@@ -9,14 +9,14 @@ The MVP is the smallest version that delivers the complete original game loop:
 - [ ] Implement setup for 0, 1, or 2 human jockeys.
 - [x] Detect and read SNES controller input needed for menus and racing.
 - [x] Define compact data structures for bettors, horses, race entries, and race results.
-- [ ] Implement generation of 8 persistent horses at the start of a new session.
-- [ ] Implement persistent horse traits: break speed, early pace, endurance, stretch speed, and 3 surface affinities.
-- [ ] Implement generation of a 10-race program.
-- [ ] Generate 4 entrants per race from the 8-horse stable.
-- [ ] Generate race surface per race: dry, muddy, or turf.
-- [ ] Generate race length per race using the original grouped structure.
-- [ ] Implement bettor bankrolls with a $750 starting value.
-- [ ] Enforce the $250 maximum wager or current bankroll, whichever is lower.
+- [x] Implement generation of 8 persistent horses at the start of a new session.
+- [x] Implement persistent horse traits: break speed, early pace, endurance, stretch speed, and 3 surface affinities.
+- [x] Implement generation of a 10-race program.
+- [x] Generate 4 entrants per race from the 8-horse stable.
+- [x] Generate race surface per race: dry, muddy, or turf.
+- [x] Generate race length per race using the original grouped structure.
+- [x] Implement bettor bankrolls with a $750 starting value.
+- [x] Enforce the $250 maximum wager or current bankroll, whichever is lower.
 - [ ] Mark busted bettors as out of the game.
 - [x] Implement the betting sheet screen.
 - [x] Show race number, entrants, odds, distance, surface, and bettor bankrolls on the betting sheet.
@@ -83,10 +83,10 @@ Build these in order. Later steps should not start until their prerequisites are
 
 #### Step 2: Session Initialization
 
-- [ ] Generate 8 persistent horses at session start.
-- [ ] Generate persistent horse traits for pace, endurance, break speed, stretch speed, and surface affinity.
-- [ ] Generate a 10-race program with entrants, distance, and surface.
-- [ ] Implement bankroll tracking with $750 starting stake and $250 max wager cap.
+- [x] Generate 8 persistent horses at session start.
+- [x] Generate persistent horse traits for pace, endurance, break speed, stretch speed, and surface affinity.
+- [x] Generate a 10-race program with entrants, distance, and surface.
+- [x] Implement bankroll tracking with $750 starting stake and $250 max wager cap.
 - [ ] Implement elimination of busted bettors.
 
 #### Step 3: Betting Phase
@@ -219,11 +219,11 @@ Make one race playable from the betting side before live race presentation is fi
 
 Tasks:
 
-- [ ] Generate 8 persistent horses at session start.
-- [ ] Generate persistent horse traits for pace, endurance, break speed, stretch speed, and surface affinity.
-- [ ] Generate a 10-race program with entrants, surfaces, and distance groups.
-- [ ] Implement bankroll tracking with $750 starting stake.
-- [ ] Enforce the $250 max wager cap.
+- [x] Generate 8 persistent horses at session start.
+- [x] Generate persistent horse traits for pace, endurance, break speed, stretch speed, and surface affinity.
+- [x] Generate a 10-race program with entrants, surfaces, and distance groups.
+- [x] Implement bankroll tracking with $750 starting stake.
+- [x] Enforce the $250 max wager cap.
 - [ ] Mark busted bettors as out of the game.
 - [x] Implement the betting sheet logic.
 - [x] Show race number, entrants, odds, distance, surface, and bettor bankrolls.
