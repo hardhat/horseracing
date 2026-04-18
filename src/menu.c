@@ -1,100 +1,160 @@
+#include <stdio.h>
+#include <string.h>
+
 #include "main.h"
 #include "menu.h"
 #include "game.h"
 #include "dat.h"
 
-#define TITLE_TILE 0xD0
-#define MENU_TILE 0xD8
-#define CHOICE_TILE 0xA0
-#define CHOICE_TILE2 0xB0
-#define CHOICE_TILE3 0xC0
-#define ARROW_TILE 0xAF
+#define TITLE_PROMPT_TILE 0xD0
+#define SETUP_HEADER_TILE 0xD8
+#define SETUP_VALUE_TILE  0xE0
+#define HELP_TILE         0xE8
+#define ARROW_TILE        0xAF
 
-#define MAX_CHOICE_TIMER 4
+#define MAX_BLINK_TIMER 8
 
-int choice=0;
-int last_choice;
-int choice_timer=MAX_CHOICE_TIMER;
-int choice_color=COL_RED;   // Selected color, which rotates
+enum MenuScreen {
+    MENU_SCREEN_TITLE,
+    MENU_SCREEN_BETTORS,
+};
 
-void init_menu(void)
+static uint8_t menu_screen;
+static uint8_t selected_bettors;
+static int blink_timer = MAX_BLINK_TIMER;
+static uint8_t prompt_bg = COL_BLUE;
+
+static void draw_title_banner(void)
 {
-    char buffer[17+17];
+    uint8_t buffer[17 + 17];
 
-    last_choice=-1;
+    for(uint8_t i = 0; i < 34u; i++) {
+        buffer[i] = (uint8_t)(TILE_COLOR_TITLE + i);
+    }
+
+    for(uint8_t row = 0; row < 2u; row++) {
+        draw_tilemap_array(2, (uint8_t)(2u + row), &buffer[row * 17u], 17);
+    }
+}
+
+static void draw_center_strip(uint8_t tile, uint8_t map_x, uint8_t map_y,
+    uint8_t bg, uint8_t fg, const char *text)
+{
+    uint8_t span = (uint8_t)((strlen(text) + 1u) >> 1);
+
+    clear_text_tiles(bg, span);
+    draw_text_opaque(0, 4, text, fg, bg);
+    render_text(tile, span);
+
+    for(uint8_t i = 0; i < span; i++) {
+        draw_tilemap((uint16_t)(map_x + i), map_y, (uint8_t)(tile + i));
+    }
+}
+
+static void redraw_menu(void)
+{
+    char bettor_line[16];
+
     fill_tilemap(TILE_COLOR_BLACK, 0, 0, TILES_ACROSS, TILES_DOWN);
     render_tilemap(1);
     render_tilemap(0);
-    // Template sample: replace these menu entries with horse-racing setup flow.
-    for(int i=0;i<17+17;i++) buffer[i]=TILE_COLOR_TITLE+i;
-    for(int i=0;i<17+17;i+=17) draw_tilemap_array(2,2+(i/17),(uint8_t *)buffer+i,17);
-    render_tilemap(0);
-    clear_text_tiles(COL_DARK_GREEN, 7);
+    clear_sprites();
+
+    draw_title_banner();
+
     set_font(FONT_NICETY_BOLD);
-    draw_text_opaque(4, 4, " Press Start ", COL_WHITE, COL_BLUE);
-    render_text(MENU_TILE, 7);
-    for(int i=0;i<7;i++) {
-        draw_tilemap(7+i, 7, MENU_TILE+i);
-    }
+    draw_center_strip(TITLE_PROMPT_TILE, 4, 6, COL_BLACK, COL_WHITE, "HORSE RACING");
+
     set_font(FONT_NICETY);
-    clear_text_tiles(COL_BLACK, 1);
-    draw_text(0,0,">",COL_RED);
-    draw_text(0,0,"-",COL_RED);
-    render_text(ARROW_TILE, 1);
-    clear_text_tiles(COL_WHITE, 9);
-    draw_text(8,4,"Play Demo",COL_DARK_GREEN);
-    render_text(CHOICE_TILE, 9);
-    clear_text_tiles(COL_WHITE, 9);
-    draw_text(8,4,"Input Test",COL_DARK_GREEN);
-    render_text(CHOICE_TILE2, 9);
-    clear_text_tiles(COL_WHITE, 9);
-    draw_text(8,4,"TODO",COL_DARK_GREEN);
-    render_text(CHOICE_TILE3, 9);
-    for(int i=0;i<9;i++) {
-        draw_tilemap(7+i, 9, CHOICE_TILE+i);
-        draw_tilemap(7+i, 10, CHOICE_TILE2+i);
-        draw_tilemap(7+i, 11, CHOICE_TILE3+i);
+    if(menu_screen == MENU_SCREEN_TITLE) {
+        draw_center_strip(SETUP_HEADER_TILE, 3, 9, prompt_bg, COL_WHITE, "PRESS START");
+        draw_center_strip(HELP_TILE, 2, 12, COL_BLACK, COL_LIGHT_GRAY, "NEW 10-RACE PROGRAM");
+    } else {
+        draw_center_strip(SETUP_HEADER_TILE, 4, 8, COL_BLACK, COL_LIGHT_GRAY, "SELECT BETTORS");
+        sprintf(bettor_line, "<  %u BETTORS  >", (unsigned)selected_bettors);
+        draw_center_strip(SETUP_VALUE_TILE, 3, 10, COL_DARK_BLUE, COL_WHITE, bettor_line);
+        draw_center_strip(HELP_TILE, 1, 13, COL_BLACK, COL_LIGHT_GRAY, "U/D CHANGE  A START");
     }
+
     render_tilemap(0);
+}
+
+void init_menu(void)
+{
+    menu_screen = MENU_SCREEN_TITLE;
+    selected_bettors = (game.configured_bettors >= 1u && game.configured_bettors <= 6u)
+        ? game.configured_bettors
+        : 1u;
+    blink_timer = MAX_BLINK_TIMER;
+    prompt_bg = COL_BLUE;
+    redraw_menu();
 }
 
 void input_menu(uint8_t key, bool down)
 {
-    if(down && key == INPUT_START)
-    {
-    game.menu_choice=choice;
-    set_state(GAME_STATE_GAME);
+    if(!down) {
+        return;
     }
-    if(down && key == INPUT_UP)
-    { 
-        choice--;
-        if(choice<0) choice=2;
+
+    if(menu_screen == MENU_SCREEN_TITLE) {
+        if(key == INPUT_START || key == INPUT_A) {
+            menu_screen = MENU_SCREEN_BETTORS;
+            redraw_menu();
+        }
+        return;
     }
-    if(down && key == INPUT_DOWN)
-    {
-        choice++;
-        if(choice>2) choice=0;
+
+    switch(key) {
+        case INPUT_UP:
+        case INPUT_RIGHT:
+            if(selected_bettors < 6u) {
+                selected_bettors++;
+                redraw_menu();
+            }
+            break;
+
+        case INPUT_DOWN:
+        case INPUT_LEFT:
+            if(selected_bettors > 1u) {
+                selected_bettors--;
+                redraw_menu();
+            }
+            break;
+
+        case INPUT_B:
+            menu_screen = MENU_SCREEN_TITLE;
+            redraw_menu();
+            break;
+
+        case INPUT_A:
+        case INPUT_START:
+            game.configured_bettors = selected_bettors;
+            set_state(GAME_STATE_GAME);
+            break;
+
+        default:
+            break;
     }
 }
 
 void update_menu(void)
 {
-    choice_timer--;
-    if(choice_timer==0)
-    {
-        choice_timer=MAX_CHOICE_TIMER;
-        choice_color=(choice_color==COL_RED)?COL_LIGHT_GRAY:COL_RED;
-        last_choice=-1;
+    blink_timer--;
+    if(blink_timer == 0) {
+        blink_timer = MAX_BLINK_TIMER;
+        prompt_bg = (prompt_bg == COL_BLUE) ? COL_DARK_BLUE : COL_BLUE;
+        if(menu_screen == MENU_SCREEN_TITLE) {
+            redraw_menu();
+        }
     }
 }
 
 void draw_menu(void)
 {
-    if(last_choice!=choice) {
-        reset_sprite();
-        add_sprite(7*16,choice*16+9*16+4,ARROW_TILE);
-        //add_sprite(6*16,choice*16+9*16,TILE_PC_SWORDSMAN+choice);
-        render_sprites();
-        last_choice=choice;
+    reset_sprite();
+    if(menu_screen == MENU_SCREEN_BETTORS) {
+        add_sprite(2u * 16u, (uint8_t)(10u * 16u + 4u), ARROW_TILE);
+        add_sprite(16u * 16u, (uint8_t)(10u * 16u + 4u), ARROW_TILE);
     }
+    render_sprites();
 }

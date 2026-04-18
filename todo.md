@@ -4,8 +4,8 @@
 
 The MVP is the smallest version that delivers the complete original game loop:
 
-- [ ] Boot to a title screen and start a new 10-race program.
-- [ ] Implement player setup for 1 to 6 bettors.
+- [x] Boot to a title screen and start a new 10-race program.
+- [x] Implement player setup for 1 to 6 bettors.
 - [ ] Implement setup for 0, 1, or 2 human jockeys.
 - [x] Detect and read SNES controller input needed for menus and racing.
 - [x] Define compact data structures for bettors, horses, race entries, and race results.
@@ -77,8 +77,8 @@ Build these in order. Later steps should not start until their prerequisites are
 
 - [x] Define compact runtime structures for bettors, horses, races, wagers, past performances, and results.
 - [x] Implement SNES controller input handling for menus and races.
-- [ ] Build the boot flow from title screen to new 10-race program.
-- [ ] Implement player setup for 1 to 6 bettors.
+- [x] Build the boot flow from title screen to new 10-race program.
+- [x] Implement player setup for 1 to 6 bettors.
 - [ ] Implement jockey setup for 0, 1, or 2 human riders.
 
 #### Step 2: Session Initialization
@@ -199,17 +199,17 @@ Create the base program flow, input layer, and runtime data model.
 
 Tasks:
 
-- [ ] Build boot flow from title screen to a new session.
-- [ ] Implement player setup for 1 to 6 bettors.
+- [x] Build boot flow from title screen to a new session.
+- [x] Implement player setup for 1 to 6 bettors.
 - [ ] Implement jockey setup for 0, 1, or 2 human riders.
 - [x] Implement SNES controller input handling for menus and races.
 - [x] Define compact data structures for bettors, horses, race programs, wagers, and results.
-- [ ] Implement session reset and new-game initialization.
+- [x] Implement session reset and new-game initialization.
 
 Completion gate:
 
-- [ ] A new session can be started from the title screen.
-- [ ] The game can capture valid controller input and move cleanly through setup.
+- [x] A new session can be started from the title screen.
+- [x] The game can capture valid controller input and move cleanly through setup.
 - [ ] Core runtime structures initialize without corrupt state.
 
 ### Milestone 2: Race Program And Betting Loop

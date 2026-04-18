@@ -448,18 +448,27 @@ static void assign_race_odds(struct RaceCard *race)
 
 static void init_generated_session(void)
 {
+    uint8_t configured_bettors;
+
     memset(&game.session, 0, sizeof(game.session));
     seed_next_session();
 
-    game.session.bettor_count = 1;
+    configured_bettors = game.configured_bettors;
+    if(configured_bettors == 0u || configured_bettors > 6u) {
+        configured_bettors = 1u;
+    }
+
+    game.session.bettor_count = configured_bettors;
     game.session.jockey_count = 0;
     game.session.current_race = 0;
     game.session.active_bettor = 0;
     game.session.selected_entry = 0;
     game.session.selected_field = BETTING_FIELD_HORSE;
 
-    game.session.bettors[0].bankroll = 750;
-    game.session.bettors[0].active = 1;
+    for(uint8_t i = 0; i < configured_bettors; i++) {
+        game.session.bettors[i].bankroll = 750;
+        game.session.bettors[i].active = 1;
+    }
 
     for(uint8_t i = 0; i < HORSE_COLOR_COUNT; i++) {
         init_horse(&game.session.stable[i], i);
@@ -656,7 +665,11 @@ void init_game(void)
     debug_log("game: init placeholder screen");
 
     memset(held, 0, sizeof(held));
-    memset(&game, 0, sizeof(game));
+    memset(&game.session, 0, sizeof(game.session));
+
+    if(game.configured_bettors == 0u) {
+        game.configured_bettors = 1u;
+    }
 
     init_generated_session();
 

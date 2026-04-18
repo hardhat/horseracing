@@ -123,6 +123,7 @@ struct SessionState
 struct Game
 {
     uint8_t menu_choice;
+    uint8_t configured_bettors;
     uint8_t cursor_x;
     uint8_t cursor_y;
     uint16_t frame_counter;
