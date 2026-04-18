@@ -107,6 +107,7 @@ static void draw_field_value(uint16_t x, uint8_t y, uint8_t width,
 
 static void update_wager_block(const struct TextPairBlock *block,
     const char *type_value, const char *amount_value, const char *horse_value,
+    const char *horse_label,
     bool type_selected, bool amount_selected, bool horse_selected,
     const char *state_label)
 {
@@ -117,7 +118,7 @@ static void update_wager_block(const struct TextPairBlock *block,
     draw_text(80, 0, "AMT", COL_LIGHT_GRAY);
     draw_field_value(112, 0, 5, amount_value, amount_selected);
 
-    draw_text(0, 8, "HORSE", COL_LIGHT_GRAY);
+    draw_text(0, 8, horse_label, COL_LIGHT_GRAY);
     draw_field_value(48, 8, 7, horse_value, horse_selected);
     draw_text(120, 8, state_label, COL_LIGHT_GRAY);
 
@@ -153,6 +154,15 @@ static void clear_confirmed_wager(struct Bettor *bettor, struct Wager *wager)
     }
 }
 
+static void sync_selected_exacta_pick(struct Wager *wager)
+{
+    if(wager->type == BET_TYPE_EXACTA && game.session.selected_exacta_pick != 0u) {
+        game.session.selected_entry = wager->second_pick;
+    } else {
+        game.session.selected_entry = wager->first_pick;
+    }
+}
+
 static void reset_wager(struct Wager *wager)
 {
     wager->amount = 50u;
@@ -164,7 +174,7 @@ static void reset_wager(struct Wager *wager)
 
 static void sync_selected_entry(void)
 {
-    game.session.selected_entry = game.session.wagers[game.session.active_bettor].first_pick;
+    sync_selected_exacta_pick(&game.session.wagers[game.session.active_bettor]);
 }
 
 static void normalize_wager(struct Wager *wager)
@@ -237,17 +247,43 @@ static void cycle_wager_type(struct Wager *wager, int8_t delta)
 
 static void cycle_selected_horse(struct Wager *wager, int8_t delta)
 {
+    uint8_t *selected_pick;
+
     if(wager->type == BET_TYPE_NONE) {
         return;
     }
 
+    selected_pick = (wager->type == BET_TYPE_EXACTA && game.session.selected_exacta_pick != 0u)
+        ? &wager->second_pick
+        : &wager->first_pick;
+
     if(delta > 0) {
-        wager->first_pick = (uint8_t)((wager->first_pick + 1u) & 0x03u);
+        *selected_pick = (uint8_t)((*selected_pick + 1u) & 0x03u);
     } else if(delta < 0) {
-        wager->first_pick = (uint8_t)((wager->first_pick + 3u) & 0x03u);
+        *selected_pick = (uint8_t)((*selected_pick + 3u) & 0x03u);
     }
     normalize_wager(wager);
-    sync_selected_entry();
+    sync_selected_exacta_pick(wager);
+}
+
+static void toggle_exacta_pick(struct Wager *wager)
+{
+    if(wager->type != BET_TYPE_EXACTA) {
+        game.session.selected_exacta_pick = 0u;
+        sync_selected_exacta_pick(wager);
+        return;
+    }
+
+    game.session.selected_exacta_pick ^= 1u;
+    sync_selected_exacta_pick(wager);
+}
+
+static void sync_wager_selection_state(struct Wager *wager)
+{
+    if(wager->type != BET_TYPE_EXACTA) {
+        game.session.selected_exacta_pick = 0u;
+    }
+    sync_selected_exacta_pick(wager);
 }
 
 static void seed_next_session(void)
@@ -387,6 +423,7 @@ static void init_generated_session(void)
     game.session.active_bettor = 0;
     game.session.betting_complete = 0;
     game.session.selected_entry = 0;
+    game.session.selected_exacta_pick = 0;
     game.session.selected_field = BETTING_FIELD_HORSE;
 
     for(uint8_t i = 0; i < configured_bettors; i++) {
@@ -479,6 +516,7 @@ static void select_active_bettor(uint8_t bettor_index)
     struct Wager *wager = &game.session.wagers[bettor_index];
 
     game.session.active_bettor = bettor_index;
+    game.session.selected_exacta_pick = 0u;
     game.session.selected_field = (wager->type == BET_TYPE_NONE)
         ? BETTING_FIELD_TYPE
         : BETTING_FIELD_HORSE;
@@ -520,8 +558,20 @@ static void reset_active_wager(void)
 
     clear_confirmed_wager(bettor, wager);
     reset_wager(wager);
+    game.session.selected_exacta_pick = 0u;
     game.session.betting_complete = 0u;
     sync_selected_entry();
+}
+
+static void skip_active_bettor(void)
+{
+    struct Wager *wager = &game.session.wagers[game.session.active_bettor];
+
+    reset_active_wager();
+    wager->type = BET_TYPE_NONE;
+    wager->amount = 0u;
+    commit_wager(&game.session.bettors[game.session.active_bettor], wager);
+    advance_to_next_bettor();
 }
 
 static void init_betting_turn(void)
@@ -580,6 +630,7 @@ static void refresh_betting_text_blocks(void)
     const char *help_top;
     const char *help_bottom;
     const char *state_label;
+    const char *horse_label = "HORSE";
 
     sprintf(title_line, "BETTOR %u/%u",
         (unsigned)(game.session.active_bettor + 1u),
@@ -605,6 +656,7 @@ static void refresh_betting_text_blocks(void)
             sprintf(horse_value, "%s-%s",
                 horse_color_short_name[game.session.stable[first_horse_index].color],
                 horse_color_short_name[game.session.stable[second_horse_index].color]);
+            horse_label = (game.session.selected_exacta_pick == 0u) ? "1ST" : "2ND";
         } else {
             sprintf(horse_value, "%s",
                 horse_color_short_name[game.session.stable[first_horse_index].color]);
@@ -617,9 +669,13 @@ static void refresh_betting_text_blocks(void)
         strcpy(title_line, "BETS LOCKED");
         help_top = "START NEXT  B EDIT";
         help_bottom = "L/R VIEW  X TYPE";
+    } else if(wager->type == BET_TYPE_EXACTA
+        && game.session.selected_field == BETTING_FIELD_HORSE) {
+        help_top = "U/D HORSE  A NEXT";
+        help_bottom = "L/R FIELD  B RESET";
     } else {
         help_top = "L/R FIELD  A LOCK";
-        help_bottom = "U/D EDIT   B RESET";
+        help_bottom = "U/D EDIT SELECT PASS";
     }
 
     set_font(FONT_NICETY_BOLD);
@@ -629,6 +685,7 @@ static void refresh_betting_text_blocks(void)
         bet_type_name[wager->type],
         amount_value,
         horse_value,
+        horse_label,
         game.session.betting_complete == 0u && game.session.selected_field == BETTING_FIELD_TYPE,
         game.session.betting_complete == 0u && game.session.selected_field == BETTING_FIELD_AMOUNT,
         game.session.betting_complete == 0u && game.session.selected_field == BETTING_FIELD_HORSE,
@@ -758,6 +815,7 @@ void input_game(uint8_t key, bool down)
             switch(game.session.selected_field) {
                 case BETTING_FIELD_TYPE:
                     cycle_wager_type(wager, 1);
+                    sync_wager_selection_state(wager);
                     break;
                 case BETTING_FIELD_AMOUNT:
                     adjust_wager_amount(bettor, wager, 1);
@@ -781,6 +839,7 @@ void input_game(uint8_t key, bool down)
             switch(game.session.selected_field) {
                 case BETTING_FIELD_TYPE:
                     cycle_wager_type(wager, -1);
+                    sync_wager_selection_state(wager);
                     break;
                 case BETTING_FIELD_AMOUNT:
                     adjust_wager_amount(bettor, wager, -1);
@@ -818,8 +877,10 @@ void input_game(uint8_t key, bool down)
             break;
 
         case INPUT_SELECT:
-            // TODO: Use SELECT for context-sensitive actions in betting or setup screens.
-            game_show_dialog("TODO: bind SELECT to horse racing UI action");
+            if(!game.session.betting_complete) {
+                skip_active_bettor();
+                refresh_betting_text_blocks();
+            }
             break;
 
         case INPUT_A:
@@ -830,8 +891,14 @@ void input_game(uint8_t key, bool down)
                 break;
             }
             if(wager->confirmed == 0u) {
-                commit_wager(bettor, wager);
-                advance_to_next_bettor();
+                if(wager->type == BET_TYPE_EXACTA
+                    && game.session.selected_field == BETTING_FIELD_HORSE
+                    && game.session.selected_exacta_pick == 0u) {
+                    toggle_exacta_pick(wager);
+                } else {
+                    commit_wager(bettor, wager);
+                    advance_to_next_bettor();
+                }
             }
             refresh_betting_text_blocks();
             break;
@@ -851,6 +918,7 @@ void input_game(uint8_t key, bool down)
             }
             clear_confirmed_wager(bettor, wager);
             cycle_wager_type(wager, 1);
+            sync_wager_selection_state(wager);
             refresh_betting_text_blocks();
             break;
         }

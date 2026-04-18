@@ -118,6 +118,7 @@ struct SessionState
     uint8_t active_bettor;
     uint8_t betting_complete;
     uint8_t selected_entry;
+    uint8_t selected_exacta_pick;
     uint8_t selected_field;
 };
 

@@ -22,7 +22,7 @@ The MVP is the smallest version that delivers the complete original game loop:
 - [x] Show race number, entrants, odds, distance, surface, and bettor bankrolls on the betting sheet.
 - [x] Implement turn-based pass-and-play betting entry.
 - [x] Implement Win bets.
-- [ ] Implement Exacta bets.
+- [x] Implement Exacta bets.
 - [x] Lock in wagers and deduct bankroll immediately on confirmation.
 - [ ] Implement tentative odds display for the current race.
 - [ ] Adjust odds as wagers are placed.
@@ -95,7 +95,7 @@ Build these in order. Later steps should not start until their prerequisites are
 - [x] Implement turn-based pass-and-play wager entry.
 - [ ] Implement tentative odds generation and update odds as bets are placed.
 - [x] Implement Win bet entry and validation.
-- [ ] Implement Exacta bet entry and validation.
+- [x] Implement Exacta bet entry and validation.
 - [x] Deduct bankroll immediately when a wager is confirmed.
 
 #### Step 4: Race History And Handicapping Data
@@ -229,7 +229,7 @@ Tasks:
 - [x] Show race number, entrants, odds, distance, surface, and bettor bankrolls.
 - [x] Implement pass-and-play wager entry.
 - [x] Implement Win bets.
-- [ ] Implement Exacta bets.
+- [x] Implement Exacta bets.
 - [x] Deduct bankroll immediately when a wager is confirmed.
 - [ ] Implement tentative odds generation and update logic.
 
@@ -237,7 +237,7 @@ Completion gate:
 
 - [ ] The first race can be configured and wagered entirely through the betting UI.
 - [ ] Bankroll math is correct for valid and invalid wagers.
-- [ ] Win and Exacta bets can be entered and stored correctly.
+- [x] Win and Exacta bets can be entered and stored correctly.
 
 ### Milestone 3: Past Performances And Results Data
 
