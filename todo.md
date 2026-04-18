@@ -54,8 +54,8 @@ The MVP is the smallest version that delivers the complete original game loop:
 - [x] Settle Win and Exacta payouts.
 - [x] Update bettor bankrolls after each race.
 - [x] Advance automatically from race results to the next betting phase.
-- [ ] End the session after race 10.
-- [ ] Display final standings and overall winner.
+- [x] End the session after race 10.
+- [x] Display final standings and overall winner.
 - [x] Build a minimal tile set that fits within the 256-tile budget.
 - [ ] Build minimal horse and jockey art that is readable by color.
 - [x] Build minimal dry, muddy, and turf visual variants.
@@ -137,7 +137,7 @@ Build these in order. Later steps should not start until their prerequisites are
 - [x] Implement Exacta bet settlement.
 - [x] Update bankrolls after each race.
 - [x] Advance automatically to the next race.
-- [ ] Implement end-of-session standings after race 10.
+- [x] Implement end-of-session standings after race 10.
 
 ### Art
 
@@ -301,14 +301,14 @@ Tasks:
 - [x] Settle Win and Exacta payouts.
 - [x] Update bettor bankrolls after each race.
 - [x] Advance automatically from results to the next betting phase.
-- [ ] End the session after race 10.
-- [ ] Display final standings and overall winner.
+- [x] End the session after race 10.
+- [x] Display final standings and overall winner.
 
 Completion gate:
 
 - [ ] The game runs from title screen through all 10 races without manual resets.
 - [ ] Bets settle correctly after every race.
-- [ ] Final bankroll standings identify a winner after race 10.
+- [x] Final bankroll standings identify a winner after race 10.
 
 ### Milestone 6: MVP Presentation Package
 

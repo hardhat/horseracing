@@ -23,7 +23,9 @@ static uint8_t race_finish_count;
 static uint8_t race_controlled_entry;
 static uint16_t race_tick;
 static uint8_t race_show_results;
+static uint8_t race_show_standings;
 static uint16_t race_result_timer;
+static uint8_t standings_order[6];
 
 static struct TextPairBlock betting_summary_block;
 static struct TextPairBlock betting_wager_block;
@@ -814,6 +816,29 @@ static void finalize_bettor_activity(void)
     }
 }
 
+static void build_standings_order(void)
+{
+    for(uint8_t i = 0; i < game.session.bettor_count; i++) {
+        standings_order[i] = i;
+    }
+
+    for(uint8_t i = 0; i + 1u < game.session.bettor_count; i++) {
+        for(uint8_t j = (uint8_t)(i + 1u); j < game.session.bettor_count; j++) {
+            uint8_t left = standings_order[i];
+            uint8_t right = standings_order[j];
+            uint16_t left_bank = game.session.bettors[left].bankroll;
+            uint16_t right_bank = game.session.bettors[right].bankroll;
+
+            if(right_bank > left_bank
+                || (right_bank == left_bank && right < left)) {
+                uint8_t swap = standings_order[i];
+                standings_order[i] = standings_order[j];
+                standings_order[j] = swap;
+            }
+        }
+    }
+}
+
 static void settle_race_wagers(void)
 {
     struct RaceCard *race = &game.session.races[game.session.current_race];
@@ -869,6 +894,44 @@ static void render_race_results_screen(void)
     render_tilemap(0);
 }
 
+static void render_final_standings_screen(void)
+{
+    char line[20];
+    uint8_t winner_index;
+
+    fill_tilemap(TILE_COLOR_BLACK, 0, 0, TILES_ACROSS, TILES_DOWN);
+    render_tilemap(1);
+
+    build_standings_order();
+    winner_index = standings_order[0];
+
+    set_font(FONT_NICETY_BOLD);
+    text_draw_strip_alloc(2, 1, "FINAL STANDINGS", COL_WHITE, COL_BLACK, 4, false);
+    set_font(FONT_NICETY);
+
+    sprintf(line, "WINNER B%u $%u",
+        (unsigned)(winner_index + 1u),
+        (unsigned)game.session.bettors[winner_index].bankroll);
+    text_draw_strip_alloc(3, 3, line, COL_YELLOW, COL_BLACK, 4, false);
+
+    for(uint8_t i = 0; i < game.session.bettor_count && i < 4u; i++) {
+        uint8_t bettor_index = standings_order[i];
+
+        sprintf(line, "%u B%u $%u",
+            (unsigned)(i + 1u),
+            (unsigned)(bettor_index + 1u),
+            (unsigned)game.session.bettors[bettor_index].bankroll);
+        text_draw_strip_alloc(4, (uint8_t)(5u + i * 2u), line, COL_WHITE, COL_BLACK, 4, false);
+    }
+
+    text_draw_pair_alloc(3, 13,
+        "RACE 10 DONE",
+        "START MENU",
+        COL_LIGHT_GRAY, COL_BLACK);
+
+    render_tilemap(0);
+}
+
 static void finish_race_and_show_results(void)
 {
     if(race_show_results != 0u) {
@@ -892,7 +955,10 @@ static void advance_after_results(void)
         return;
     }
 
-    set_state(GAME_STATE_MENU);
+    race_show_standings = 1u;
+    race_show_results = 0u;
+    clear_sprites();
+    render_final_standings_screen();
 }
 
 static void render_race_prototype_rows(void)
@@ -1406,6 +1472,7 @@ void init_gameover(void)
     race_controlled_entry = controlled_race_entry();
     race_tick = 0u;
     race_show_results = 0u;
+    race_show_standings = 0u;
     race_result_timer = 0u;
 
     fill_tilemap(TILE_COLOR_BLACK, 0, 0, TILES_ACROSS, TILES_DOWN);
@@ -1442,6 +1509,13 @@ void init_gameover(void)
 
 void input_gameover(uint8_t key, bool down)
 {
+    if(race_show_standings != 0u) {
+        if(down && (key == INPUT_START || key == INPUT_A)) {
+            set_state(GAME_STATE_MENU);
+        }
+        return;
+    }
+
     if(race_show_results != 0u) {
         return;
     }
