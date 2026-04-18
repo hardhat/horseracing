@@ -916,17 +916,17 @@ static void render_final_standings_screen(void)
         (unsigned)game.session.bettors[winner_index].bankroll);
     text_draw_strip_alloc(3, 3, line, COL_YELLOW, COL_BLACK, 4, false);
 
-    for(uint8_t i = 0; i < game.session.bettor_count && i < 4u; i++) {
+    for(uint8_t i = 0; i < game.session.bettor_count; i++) {
         uint8_t bettor_index = standings_order[i];
 
         sprintf(line, "%u B%u $%u",
             (unsigned)(i + 1u),
             (unsigned)(bettor_index + 1u),
             (unsigned)game.session.bettors[bettor_index].bankroll);
-        text_draw_strip_alloc(4, (uint8_t)(5u + i * 2u), line, COL_WHITE, COL_BLACK, 4, false);
+        text_draw_strip_alloc(4, (uint8_t)(4u + i), line, COL_WHITE, COL_BLACK, 4, false);
     }
 
-    text_draw_pair_alloc(3, 13,
+    text_draw_pair_alloc(3, 12,
         "RACE 10 DONE",
         "START MENU",
         COL_LIGHT_GRAY, COL_BLACK);
