@@ -7,12 +7,26 @@
 #include "game.h"
 
 #define TEXT_TILE_ARENA_BASE  ((uint8_t)0x9Cu)
-#define TEXT_TILE_ARENA_LIMIT ((uint8_t)0xD8u)
+#define TEXT_TILE_ARENA_LIMIT ((uint8_t)0xFFu)
+#define BETTING_SUMMARY_SPAN  ((uint8_t)10u)
+#define BETTING_WAGER_SPAN    ((uint8_t)12u)
 
 struct Game game;
 
 static bool held[MAX_INPUT];
 static uint8_t text_tile_next;
+
+struct TextPairBlock {
+    uint8_t base_tile;
+    uint8_t span;
+    uint8_t map_x;
+    uint8_t map_y;
+    uint8_t fg;
+    uint8_t bg;
+};
+
+static struct TextPairBlock betting_summary_block;
+static struct TextPairBlock betting_wager_block;
 
 static const char *const horse_color_name[HORSE_COLOR_COUNT] = {
     "WHITE",
@@ -23,6 +37,17 @@ static const char *const horse_color_name[HORSE_COLOR_COUNT] = {
     "PURPLE",
     "BROWN",
     "BLACK",
+};
+
+static const char *const horse_color_short_name[HORSE_COLOR_COUNT] = {
+    "WHT",
+    "GRN",
+    "GLD",
+    "RED",
+    "BLU",
+    "PUR",
+    "BRN",
+    "BLK",
 };
 
 static const char *const surface_name[SURFACE_COUNT] = {
@@ -36,6 +61,19 @@ static const char *const bet_type_name[] = {
     "WIN",
     "EXA",
 };
+
+static void copy_padded_text(char *buffer, uint8_t width, const char *value)
+{
+    uint8_t length = (uint8_t)strlen(value);
+
+    if(length > width) {
+        length = width;
+    }
+
+    memset(buffer, ' ', width);
+    memcpy(buffer, value, length);
+    buffer[width] = '\0';
+}
 
 static uint8_t text_tile_span(const char *text)
 {
@@ -99,6 +137,60 @@ static void draw_text_pair(uint8_t map_x, uint8_t map_y,
     for(uint8_t i = 0; i < span; i++) {
         draw_tilemap((uint16_t)(map_x + i), map_y, (uint8_t)(base_tile + i));
     }
+}
+
+static void init_text_pair_block(struct TextPairBlock *block,
+    uint8_t map_x, uint8_t map_y, uint8_t span, uint8_t fg, uint8_t bg)
+{
+    block->base_tile = alloc_text_tiles(span);
+    block->span = span;
+    block->map_x = map_x;
+    block->map_y = map_y;
+    block->fg = fg;
+    block->bg = bg;
+
+    for(uint8_t i = 0; i < span; i++) {
+        draw_tilemap((uint16_t)(map_x + i), map_y, (uint8_t)(block->base_tile + i));
+    }
+}
+
+static void update_text_pair_block(const struct TextPairBlock *block,
+    const char *top_text, const char *bottom_text)
+{
+    clear_text_tiles(block->bg, block->span);
+    draw_text(0, 0, top_text, block->fg);
+    draw_text(0, 8, bottom_text, block->fg);
+    render_text(block->base_tile, block->span);
+}
+
+static void draw_field_value(uint16_t x, uint8_t y, uint8_t width,
+    const char *value, bool selected)
+{
+    char padded[10];
+
+    copy_padded_text(padded, width, value);
+    draw_text_opaque(x, y, padded,
+        COL_WHITE,
+        selected ? COL_DARK_BLUE : COL_BLACK);
+}
+
+static void update_wager_block(const struct TextPairBlock *block,
+    const char *type_value, const char *amount_value, const char *horse_value,
+    bool type_selected, bool amount_selected, bool horse_selected,
+    bool confirmed)
+{
+    clear_text_tiles(block->bg, block->span);
+
+    draw_text(0, 0, "TYPE", COL_LIGHT_GRAY);
+    draw_field_value(40, 0, 4, type_value, type_selected);
+    draw_text(80, 0, "AMT", COL_LIGHT_GRAY);
+    draw_field_value(112, 0, 5, amount_value, amount_selected);
+
+    draw_text(0, 8, "HORSE", COL_LIGHT_GRAY);
+    draw_field_value(48, 8, 7, horse_value, horse_selected);
+    draw_text(120, 8, confirmed ? "LOCK" : "EDIT", COL_LIGHT_GRAY);
+
+    render_text(block->base_tile, block->span);
 }
 
 static void draw_bet_entry(uint8_t icon_tile, uint8_t marker_tile, uint8_t map_y,
@@ -300,16 +392,51 @@ static void init_test_session(void)
     game.session.races[0].entries[3].odds = 6;
 }
 
-static void draw_template_screen(void)
+static void refresh_betting_text_blocks(void)
 {
     struct RaceCard *race = &game.session.races[game.session.current_race];
     struct Bettor *bettor = &game.session.bettors[game.session.active_bettor];
     struct Wager *wager = &game.session.wagers[game.session.active_bettor];
     char summary_line[32];
-    char wager_line[24];
+    char amount_value[8];
+    char horse_value[12];
+    uint8_t first_horse_index = race->entries[wager->first_pick].horse_index;
+
+    sprintf(summary_line, "R%u %s %uF  $%u",
+        (unsigned)(game.session.current_race + 1u),
+        surface_name[race->surface],
+        (unsigned)race->distance_furlongs,
+        (unsigned)bettor->bankroll);
+
+    sprintf(amount_value, "$%03u", (unsigned)wager->amount);
+
+    if(wager->type == BET_TYPE_EXACTA) {
+        uint8_t second_horse_index = race->entries[wager->second_pick].horse_index;
+        sprintf(horse_value, "%s-%s",
+            horse_color_short_name[game.session.stable[first_horse_index].color],
+            horse_color_short_name[game.session.stable[second_horse_index].color]);
+    } else {
+        sprintf(horse_value, "%s",
+            horse_color_short_name[game.session.stable[first_horse_index].color]);
+    }
+
+    set_font(FONT_NICETY_BOLD);
+    update_text_pair_block(&betting_summary_block, "BET SHEET", summary_line);
+    set_font(FONT_NICETY);
+    update_wager_block(&betting_wager_block,
+        bet_type_name[wager->type],
+        amount_value,
+        horse_value,
+        game.session.selected_field == BETTING_FIELD_TYPE,
+        game.session.selected_field == BETTING_FIELD_AMOUNT,
+        game.session.selected_field == BETTING_FIELD_HORSE,
+        wager->confirmed != 0);
+}
+
+static void draw_template_screen(void)
+{
+    struct RaceCard *race = &game.session.races[game.session.current_race];
     char entry_line[16];
-    char amount_text[8];
-    const char *first_pick_name;
 
     fill_tilemap(TILE_COLOR_BLACK, 0, 0, TILES_ACROSS, TILES_DOWN);
     reset_text_tile_arena();
@@ -343,32 +470,11 @@ static void draw_template_screen(void)
     };
     draw_tilemap_array(0, 11, (uint8_t *)prototype_track_row, sizeof(prototype_track_row));
 
-    sprintf(summary_line, "R%u %s %uF  $%u",
-        (unsigned)(game.session.current_race + 1u),
-        surface_name[race->surface],
-        (unsigned)race->distance_furlongs,
-        (unsigned)bettor->bankroll);
-
-    sprintf(amount_text, "$%03u", (unsigned)wager->amount);
-    first_pick_name = horse_color_name[game.session.stable[race->entries[wager->first_pick].horse_index].color];
-
-    if(wager->type == BET_TYPE_EXACTA) {
-        const char *second_pick_name = horse_color_name[game.session.stable[race->entries[wager->second_pick].horse_index].color];
-        sprintf(wager_line, "%s %s-%s", bet_type_name[wager->type], first_pick_name, second_pick_name);
-    } else {
-        sprintf(wager_line, "%s %s %s", bet_type_name[wager->type], first_pick_name, amount_text);
-    }
-
-    set_font(FONT_NICETY_BOLD);
-    draw_text_pair(3, 3,
-        "BET SHEET",
-        summary_line,
-        COL_WHITE, COL_BLACK);
-    set_font(FONT_NICETY);
-    draw_text_pair(4, 6,
-        wager_line,
-        wager->confirmed ? "LOCKED   ODDS" : "HORSE    ODDS",
-        COL_LIGHT_GRAY, COL_BLACK);
+    init_text_pair_block(&betting_summary_block, 3, 3,
+        BETTING_SUMMARY_SPAN, COL_WHITE, COL_BLACK);
+    init_text_pair_block(&betting_wager_block, 4, 6,
+        BETTING_WAGER_SPAN, COL_LIGHT_GRAY, COL_BLACK);
+    refresh_betting_text_blocks();
 
     for(uint8_t i = 0; i < 4; i++) {
         struct RaceEntry *entry = &race->entries[i];
@@ -379,8 +485,8 @@ static void draw_template_screen(void)
     }
 
     draw_text_pair(1, 13,
-        "A BET  Y FORM",
-        "START  B BACK",
+        "L/R FIELD A BET",
+        "U/D EDIT  B BACK",
         COL_LIGHT_GRAY, COL_BLACK);
 
     render_tilemap(0);
@@ -436,56 +542,58 @@ void input_game(uint8_t key, bool down)
             break;
 
         case INPUT_UP:
-            if(game.session.selected_field > 0) {
-                game.session.selected_field--;
-            }
-            break;
-
-        case INPUT_DOWN:
-            if(game.session.selected_field + 1u < BETTING_FIELD_COUNT) {
-                game.session.selected_field++;
-            }
-            break;
-
-        case INPUT_LEFT:
         {
             struct Bettor *bettor = &game.session.bettors[game.session.active_bettor];
             struct Wager *wager = &game.session.wagers[game.session.active_bettor];
             clear_confirmed_wager(bettor, wager);
             switch(game.session.selected_field) {
-                case BETTING_FIELD_AMOUNT:
-                    adjust_wager_amount(bettor, wager, -1);
-                    break;
                 case BETTING_FIELD_TYPE:
-                    cycle_wager_type(wager, -1);
+                    cycle_wager_type(wager, 1);
+                    break;
+                case BETTING_FIELD_AMOUNT:
+                    adjust_wager_amount(bettor, wager, 1);
                     break;
                 case BETTING_FIELD_HORSE:
                     cycle_selected_horse(wager, -1);
                     break;
             }
-            resume_game();
+            refresh_betting_text_blocks();
             break;
         }
 
-        case INPUT_RIGHT:
+        case INPUT_DOWN:
         {
             struct Bettor *bettor = &game.session.bettors[game.session.active_bettor];
             struct Wager *wager = &game.session.wagers[game.session.active_bettor];
             clear_confirmed_wager(bettor, wager);
             switch(game.session.selected_field) {
-                case BETTING_FIELD_AMOUNT:
-                    adjust_wager_amount(bettor, wager, 1);
-                    break;
                 case BETTING_FIELD_TYPE:
-                    cycle_wager_type(wager, 1);
+                    cycle_wager_type(wager, -1);
+                    break;
+                case BETTING_FIELD_AMOUNT:
+                    adjust_wager_amount(bettor, wager, -1);
                     break;
                 case BETTING_FIELD_HORSE:
                     cycle_selected_horse(wager, 1);
                     break;
             }
-            resume_game();
+            refresh_betting_text_blocks();
             break;
         }
+
+        case INPUT_LEFT:
+            if(game.session.selected_field > 0) {
+                game.session.selected_field--;
+                refresh_betting_text_blocks();
+            }
+            break;
+
+        case INPUT_RIGHT:
+            if(game.session.selected_field + 1u < BETTING_FIELD_COUNT) {
+                game.session.selected_field++;
+                refresh_betting_text_blocks();
+            }
+            break;
 
         case INPUT_SELECT:
             // TODO: Use SELECT for context-sensitive actions in betting or setup screens.
@@ -499,7 +607,7 @@ void input_game(uint8_t key, bool down)
             if(!wager->confirmed) {
                 commit_wager(bettor, wager);
             }
-            resume_game();
+            refresh_betting_text_blocks();
             break;
         }
 
@@ -513,7 +621,7 @@ void input_game(uint8_t key, bool down)
             wager->first_pick = 0;
             wager->second_pick = 1;
             sync_selected_entry();
-            resume_game();
+            refresh_betting_text_blocks();
             break;
         }
 
@@ -523,7 +631,7 @@ void input_game(uint8_t key, bool down)
             struct Wager *wager = &game.session.wagers[game.session.active_bettor];
             clear_confirmed_wager(bettor, wager);
             cycle_wager_type(wager, 1);
-            resume_game();
+            refresh_betting_text_blocks();
             break;
         }
 
@@ -540,9 +648,10 @@ void update_game(void)
 
 void draw_game(void)
 {
-    // Row selector for the current betting entry.
     reset_sprite();
-    add_sprite(0, (uint8_t)(selected_row_y() * 16u), TILE_CURSOR);
+    if(game.session.selected_field == BETTING_FIELD_HORSE) {
+        add_sprite(0, (uint8_t)(selected_row_y() * 16u), TILE_CURSOR);
+    }
     render_sprites();
 }
 
