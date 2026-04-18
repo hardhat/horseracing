@@ -125,6 +125,22 @@ static void update_wager_block(const struct TextPairBlock *block,
     render_text(block->base_tile, block->span);
 }
 
+static void update_jockey_block(const struct TextPairBlock *block,
+    const char *control_value, const char *horse_value, const char *state_label)
+{
+    clear_text_tiles(block->bg, block->span);
+
+    draw_text(0, 0, "CTRL", COL_LIGHT_GRAY);
+    draw_field_value(40, 0, 4, control_value, true);
+    draw_text(80, 0, "PHASE", COL_LIGHT_GRAY);
+    draw_text(120, 0, state_label, COL_LIGHT_GRAY);
+
+    draw_text(0, 8, "HORSE", COL_LIGHT_GRAY);
+    draw_field_value(48, 8, 7, horse_value, true);
+
+    render_text(block->base_tile, block->span);
+}
+
 static void draw_bet_entry(uint8_t icon_tile, uint8_t marker_tile, uint8_t map_y,
     const char *text)
 {
@@ -425,6 +441,8 @@ static void init_generated_session(void)
     game.session.selected_entry = 0;
     game.session.selected_exacta_pick = 0;
     game.session.selected_field = BETTING_FIELD_HORSE;
+    game.session.flow_phase = RACE_FLOW_BETTING;
+    game.session.jockey_assignment = JOCKEY_ASSIGN_CPU;
 
     for(uint8_t i = 0; i < configured_bettors; i++) {
         game.session.bettors[i].bankroll = 750;
@@ -588,6 +606,62 @@ static void init_betting_turn(void)
     }
 }
 
+static const char *jockey_control_label(void)
+{
+    return (game.session.jockey_assignment == JOCKEY_ASSIGN_CPU) ? "CPU" : "P1";
+}
+
+static const char *jockey_horse_label(void)
+{
+    struct RaceCard *race = &game.session.races[game.session.current_race];
+
+    switch(game.session.jockey_assignment) {
+        case JOCKEY_ASSIGN_OUTSIDE_1:
+            return horse_color_short_name[game.session.stable[race->entries[0].horse_index].color];
+
+        case JOCKEY_ASSIGN_OUTSIDE_4:
+            return horse_color_short_name[game.session.stable[race->entries[3].horse_index].color];
+
+        // case JOCKEY_ASSIGN_CPU:
+        default:
+            return "NONE";
+    }
+}
+
+static void cycle_jockey_assignment(int8_t delta)
+{
+    uint8_t next = game.session.jockey_assignment;
+
+    if(delta > 0) {
+        next = (uint8_t)(next + 1u);
+        if(next >= JOCKEY_ASSIGN_COUNT) {
+            next = JOCKEY_ASSIGN_CPU;
+        }
+    } else if(delta < 0) {
+        next = (next == JOCKEY_ASSIGN_CPU)
+            ? (uint8_t)(JOCKEY_ASSIGN_COUNT - 1u)
+            : (uint8_t)(next - 1u);
+    }
+
+    game.session.jockey_assignment = next;
+}
+
+static void begin_jockey_setup(void)
+{
+    game.session.flow_phase = RACE_FLOW_JOCKEY_SETUP;
+}
+
+static void cancel_jockey_setup(void)
+{
+    game.session.flow_phase = RACE_FLOW_BETTING;
+}
+
+static void confirm_jockey_setup(void)
+{
+    game.session.jockey_count = (game.session.jockey_assignment == JOCKEY_ASSIGN_CPU) ? 0u : 1u;
+    set_state(GAME_STATE_GAMEOVER);
+}
+
 static uint8_t horse_icon_tile(uint8_t color)
 {
     switch(color) {
@@ -631,6 +705,27 @@ static void refresh_betting_text_blocks(void)
     const char *help_bottom;
     const char *state_label;
     const char *horse_label = "HORSE";
+
+    if(game.session.flow_phase == RACE_FLOW_JOCKEY_SETUP) {
+        sprintf(title_line, "JOCKEY SET");
+        sprintf(summary_line, "R%u %s %uF  %s",
+            (unsigned)(game.session.current_race + 1u),
+            surface_name[race->surface],
+            (unsigned)race->distance_furlongs,
+            jockey_control_label());
+
+        set_font(FONT_NICETY_BOLD);
+        text_update_pair_block(&betting_summary_block, title_line, summary_line);
+        set_font(FONT_NICETY);
+        update_jockey_block(&betting_wager_block,
+            jockey_control_label(),
+            jockey_horse_label(),
+            "RACE");
+        text_update_pair_block(&betting_help_block,
+            "U/D CHOICE START GO",
+            "A GO      B BETS");
+        return;
+    }
 
     sprintf(title_line, "BETTOR %u/%u",
         (unsigned)(game.session.active_bettor + 1u),
@@ -797,10 +892,41 @@ void input_game(uint8_t key, bool down)
         return;
     }
 
+    if(game.session.flow_phase == RACE_FLOW_JOCKEY_SETUP) {
+        switch(key) {
+            case INPUT_UP:
+            case INPUT_RIGHT:
+                cycle_jockey_assignment(1);
+                refresh_betting_text_blocks();
+                break;
+
+            case INPUT_DOWN:
+            case INPUT_LEFT:
+                cycle_jockey_assignment(-1);
+                refresh_betting_text_blocks();
+                break;
+
+            case INPUT_A:
+            case INPUT_START:
+                confirm_jockey_setup();
+                break;
+
+            case INPUT_B:
+                cancel_jockey_setup();
+                refresh_betting_text_blocks();
+                break;
+
+            default:
+                break;
+        }
+        return;
+    }
+
     switch(key) {
         case INPUT_START:
             if(game.session.betting_complete) {
-                set_state(GAME_STATE_GAMEOVER);
+                begin_jockey_setup();
+                refresh_betting_text_blocks();
             }
             break;
 

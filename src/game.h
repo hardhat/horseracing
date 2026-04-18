@@ -43,6 +43,20 @@ enum BettingField
     BETTING_FIELD_COUNT,
 };
 
+enum RaceFlowPhase
+{
+    RACE_FLOW_BETTING,
+    RACE_FLOW_JOCKEY_SETUP,
+};
+
+enum JockeyAssignment
+{
+    JOCKEY_ASSIGN_CPU,
+    JOCKEY_ASSIGN_OUTSIDE_1,
+    JOCKEY_ASSIGN_OUTSIDE_4,
+    JOCKEY_ASSIGN_COUNT,
+};
+
 struct HorseTraits
 {
     uint8_t break_speed;
@@ -120,6 +134,8 @@ struct SessionState
     uint8_t selected_entry;
     uint8_t selected_exacta_pick;
     uint8_t selected_field;
+    uint8_t flow_phase;
+    uint8_t jockey_assignment;
 };
 
 struct Game

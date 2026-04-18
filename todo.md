@@ -30,7 +30,7 @@ The MVP is the smallest version that delivers the complete original game loop:
 - [ ] Store and display up to the last 3 runs per horse.
 - [ ] Show enough past data to compare distance, surface, time, and finish summary.
 - [ ] Support switching between betting and past performance views during betting.
-- [ ] Implement jockey assignment before each race.
+- [x] Implement jockey assignment before each race.
 - [ ] Support all-CPU races.
 - [ ] Support one human-controlled outside horse.
 - [ ] Support two human-controlled outside horses when two controllers are available.
@@ -106,7 +106,7 @@ Build these in order. Later steps should not start until their prerequisites are
 
 #### Step 5: Jockey Assignment And Race Setup
 
-- [ ] Implement jockey assignment before each race.
+- [x] Implement jockey assignment before each race.
 - [ ] Support all-CPU races.
 - [ ] Support one human-controlled outside horse.
 - [ ] Support two human-controlled outside horses when two controllers are present.
@@ -293,7 +293,7 @@ Connect betting, racing, results, and progression into a full 10-race game.
 
 Tasks:
 
-- [ ] Implement jockey assignment before each race.
+- [x] Implement jockey assignment before each race.
 - [ ] Support all-CPU races.
 - [ ] Support one human-controlled outside horse.
 - [ ] Support two human-controlled outside horses when two controllers are present.
