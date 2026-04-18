@@ -5,12 +5,11 @@
 #include "menu.h"
 #include "game.h"
 #include "dat.h"
+#include "text.h"
 
-#define TITLE_PROMPT_TILE 0xD0
-#define SETUP_HEADER_TILE 0xD8
-#define SETUP_VALUE_TILE  0xE0
-#define HELP_TILE         0xE8
 #define ARROW_TILE        0xAF
+#define MENU_TEXT_BASE    ((uint8_t)0xD0u)
+#define MENU_TEXT_LIMIT   ((uint8_t)0xFFu)
 
 #define MAX_BLINK_TIMER 8
 
@@ -23,6 +22,13 @@ static uint8_t menu_screen;
 static uint8_t selected_bettors;
 static int blink_timer = MAX_BLINK_TIMER;
 static uint8_t prompt_bg = COL_BLUE;
+
+static struct TextStripBlock menu_title_block;
+static struct TextStripBlock title_prompt_block;
+static struct TextStripBlock title_help_block;
+static struct TextStripBlock setup_header_block;
+static struct TextStripBlock setup_value_block;
+static struct TextStripBlock setup_help_block;
 
 static void draw_title_banner(void)
 {
@@ -37,45 +43,57 @@ static void draw_title_banner(void)
     }
 }
 
-static void draw_center_strip(uint8_t tile, uint8_t map_x, uint8_t map_y,
-    uint8_t bg, uint8_t fg, const char *text)
+static void update_title_screen_blocks(void)
 {
-    uint8_t span = (uint8_t)((strlen(text) + 1u) >> 1);
-
-    clear_text_tiles(bg, span);
-    draw_text_opaque(0, 4, text, fg, bg);
-    render_text(tile, span);
-
-    for(uint8_t i = 0; i < span; i++) {
-        draw_tilemap((uint16_t)(map_x + i), map_y, (uint8_t)(tile + i));
-    }
+    title_prompt_block.bg = prompt_bg;
+    text_update_strip_block(&menu_title_block, "HORSE RACING");
+    text_update_strip_block(&title_prompt_block, "PRESS START");
+    text_update_strip_block(&title_help_block, "NEW 10-RACE PROGRAM");
+    text_update_strip_block(&setup_header_block, "");
+    text_update_strip_block(&setup_value_block, "");
+    text_update_strip_block(&setup_help_block, "");
 }
 
-static void redraw_menu(void)
+static void update_bettor_setup_blocks(void)
 {
     char bettor_line[16];
 
+    text_update_strip_block(&menu_title_block, "HORSE RACING");
+    text_update_strip_block(&title_prompt_block, "");
+    text_update_strip_block(&title_help_block, "");
+    text_update_strip_block(&setup_header_block, "SELECT BETTORS");
+    sprintf(bettor_line, "<  %u BETTORS  >", (unsigned)selected_bettors);
+    text_update_strip_block(&setup_value_block, bettor_line);
+    text_update_strip_block(&setup_help_block, "U/D CHANGE  A START");
+}
+
+static void build_menu_layout(void)
+{
     fill_tilemap(TILE_COLOR_BLACK, 0, 0, TILES_ACROSS, TILES_DOWN);
     render_tilemap(1);
     render_tilemap(0);
     clear_sprites();
 
     draw_title_banner();
+    text_reset_arena(MENU_TEXT_BASE, MENU_TEXT_LIMIT);
 
     set_font(FONT_NICETY_BOLD);
-    draw_center_strip(TITLE_PROMPT_TILE, 4, 6, COL_BLACK, COL_WHITE, "HORSE RACING");
+    text_init_strip_block(&menu_title_block, 4, 6,
+        text_measure_span("HORSE RACING"), COL_WHITE, COL_BLACK, 4, true);
 
     set_font(FONT_NICETY);
-    if(menu_screen == MENU_SCREEN_TITLE) {
-        draw_center_strip(SETUP_HEADER_TILE, 3, 9, prompt_bg, COL_WHITE, "PRESS START");
-        draw_center_strip(HELP_TILE, 2, 12, COL_BLACK, COL_LIGHT_GRAY, "NEW 10-RACE PROGRAM");
-    } else {
-        draw_center_strip(SETUP_HEADER_TILE, 4, 8, COL_BLACK, COL_LIGHT_GRAY, "SELECT BETTORS");
-        sprintf(bettor_line, "<  %u BETTORS  >", (unsigned)selected_bettors);
-        draw_center_strip(SETUP_VALUE_TILE, 3, 10, COL_DARK_BLUE, COL_WHITE, bettor_line);
-        draw_center_strip(HELP_TILE, 1, 13, COL_BLACK, COL_LIGHT_GRAY, "U/D CHANGE  A START");
-    }
+    text_init_strip_block(&title_prompt_block, 3, 9,
+        text_measure_span("PRESS START"), COL_WHITE, prompt_bg, 4, true);
+    text_init_strip_block(&title_help_block, 2, 12,
+        text_measure_span("NEW 10-RACE PROGRAM"), COL_LIGHT_GRAY, COL_BLACK, 4, true);
+    text_init_strip_block(&setup_header_block, 4, 8,
+        text_measure_span("SELECT BETTORS"), COL_LIGHT_GRAY, COL_BLACK, 4, true);
+    text_init_strip_block(&setup_value_block, 3, 10,
+        text_measure_span("<  6 BETTORS  >"), COL_WHITE, COL_DARK_BLUE, 4, true);
+    text_init_strip_block(&setup_help_block, 1, 13,
+        text_measure_span("U/D CHANGE  A START"), COL_LIGHT_GRAY, COL_BLACK, 4, true);
 
+    update_title_screen_blocks();
     render_tilemap(0);
 }
 
@@ -87,7 +105,7 @@ void init_menu(void)
         : 1u;
     blink_timer = MAX_BLINK_TIMER;
     prompt_bg = COL_BLUE;
-    redraw_menu();
+    build_menu_layout();
 }
 
 void input_menu(uint8_t key, bool down)
@@ -99,7 +117,7 @@ void input_menu(uint8_t key, bool down)
     if(menu_screen == MENU_SCREEN_TITLE) {
         if(key == INPUT_START || key == INPUT_A) {
             menu_screen = MENU_SCREEN_BETTORS;
-            redraw_menu();
+            update_bettor_setup_blocks();
         }
         return;
     }
@@ -109,7 +127,7 @@ void input_menu(uint8_t key, bool down)
         case INPUT_RIGHT:
             if(selected_bettors < 6u) {
                 selected_bettors++;
-                redraw_menu();
+                update_bettor_setup_blocks();
             }
             break;
 
@@ -117,13 +135,13 @@ void input_menu(uint8_t key, bool down)
         case INPUT_LEFT:
             if(selected_bettors > 1u) {
                 selected_bettors--;
-                redraw_menu();
+                update_bettor_setup_blocks();
             }
             break;
 
         case INPUT_B:
             menu_screen = MENU_SCREEN_TITLE;
-            redraw_menu();
+            update_title_screen_blocks();
             break;
 
         case INPUT_A:
@@ -144,7 +162,7 @@ void update_menu(void)
         blink_timer = MAX_BLINK_TIMER;
         prompt_bg = (prompt_bg == COL_BLUE) ? COL_DARK_BLUE : COL_BLUE;
         if(menu_screen == MENU_SCREEN_TITLE) {
-            redraw_menu();
+            update_title_screen_blocks();
         }
     }
 }

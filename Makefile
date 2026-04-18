@@ -1,7 +1,7 @@
 ZOS_PATH ?= ../Zeal-8-bit-OS
 ZVB_SDK_PATH ?= ../Zeal-VideoBoard-SDK
 BIN=bin/horser.bin
-OBJ=obj/main.rel obj/game.rel obj/menu.rel obj/dat.rel obj/controller.rel obj/textaccel.rel
+OBJ=obj/main.rel obj/game.rel obj/menu.rel obj/dat.rel obj/controller.rel obj/text.rel obj/textaccel.rel
 IMG=img/title.zts img/map.zts img/hud.zts img/sprites.zts
 DAT=bin/horser.dat
 CC=sdcc
@@ -42,7 +42,8 @@ src/level1.h: level/level1.tmx level/map.tsx level/title.tsx level/hud.tsx
 
 
 obj/game.rel: src/game.c src/game.h src/main.h
-obj/menu.rel: src/menu.c src/menu.h src/game.h
+obj/menu.rel: src/menu.c src/menu.h src/game.h src/text.h
+obj/text.rel: src/text.c src/text.h src/main.h
 obj/main.rel: src/main.c src/game.h src/menu.h src/dat.h
 obj/dat.rel: src/dat.c src/dat.h
 obj/controller.rel: src/controller.c src/controller.h

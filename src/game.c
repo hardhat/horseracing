@@ -5,6 +5,7 @@
 
 #include "main.h"
 #include "game.h"
+#include "text.h"
 
 #define TEXT_TILE_ARENA_BASE  ((uint8_t)0x9Cu)
 #define TEXT_TILE_ARENA_LIMIT ((uint8_t)0xFFu)
@@ -14,17 +15,7 @@
 struct Game game;
 
 static bool held[MAX_INPUT];
-static uint8_t text_tile_next;
 static uint16_t session_rng = 0x43E7u;
-
-struct TextPairBlock {
-    uint8_t base_tile;
-    uint8_t span;
-    uint8_t map_x;
-    uint8_t map_y;
-    uint8_t fg;
-    uint8_t bg;
-};
 
 static struct TextPairBlock betting_summary_block;
 static struct TextPairBlock betting_wager_block;
@@ -83,17 +74,6 @@ static void copy_padded_text(char *buffer, uint8_t width, const char *value)
     buffer[width] = '\0';
 }
 
-static uint8_t text_tile_span(const char *text)
-{
-    size_t len = strlen(text);
-    return (uint8_t)((len + 1u) >> 1);
-}
-
-static uint8_t max_u8(uint8_t a, uint8_t b)
-{
-    return (a > b) ? a : b;
-}
-
 static uint16_t next_random_u16(void)
 {
     session_rng = (uint16_t)(session_rng * 25173u + 13849u);
@@ -111,83 +91,6 @@ static uint8_t random_below(uint8_t limit)
 static uint8_t random_range_u8(uint8_t min_value, uint8_t max_value)
 {
     return (uint8_t)(min_value + random_below((uint8_t)(max_value - min_value + 1u)));
-}
-
-static void reset_text_tile_arena(void)
-{
-    text_tile_next = TEXT_TILE_ARENA_BASE;
-}
-
-static uint8_t alloc_text_tiles(uint8_t span)
-{
-    uint8_t base = text_tile_next;
-
-    if(span == 0) {
-        return base;
-    }
-
-    if((uint16_t)base + span > TEXT_TILE_ARENA_LIMIT) {
-        debug_log("game: text tile arena exhausted");
-        return TEXT_TILE_ARENA_BASE;
-    }
-
-    text_tile_next = (uint8_t)(text_tile_next + span);
-    return base;
-}
-
-static void draw_text_strip(uint8_t map_x, uint8_t map_y,
-    const char *text, uint8_t fg, uint8_t bg)
-{
-    uint8_t span = text_tile_span(text);
-    uint8_t base_tile = alloc_text_tiles(span);
-
-    clear_text_tiles(bg, span);
-    draw_text(0, 4, text, fg);
-    render_text(base_tile, span);
-
-    for(uint8_t i = 0; i < span; i++) {
-        draw_tilemap((uint16_t)(map_x + i), map_y, (uint8_t)(base_tile + i));
-    }
-}
-
-static void draw_text_pair(uint8_t map_x, uint8_t map_y,
-    const char *top_text, const char *bottom_text, uint8_t fg, uint8_t bg)
-{
-    uint8_t span = max_u8(text_tile_span(top_text), text_tile_span(bottom_text));
-    uint8_t base_tile = alloc_text_tiles(span);
-
-    clear_text_tiles(bg, span);
-    draw_text(0, 0, top_text, fg);
-    draw_text(0, 8, bottom_text, fg);
-    render_text(base_tile, span);
-
-    for(uint8_t i = 0; i < span; i++) {
-        draw_tilemap((uint16_t)(map_x + i), map_y, (uint8_t)(base_tile + i));
-    }
-}
-
-static void init_text_pair_block(struct TextPairBlock *block,
-    uint8_t map_x, uint8_t map_y, uint8_t span, uint8_t fg, uint8_t bg)
-{
-    block->base_tile = alloc_text_tiles(span);
-    block->span = span;
-    block->map_x = map_x;
-    block->map_y = map_y;
-    block->fg = fg;
-    block->bg = bg;
-
-    for(uint8_t i = 0; i < span; i++) {
-        draw_tilemap((uint16_t)(map_x + i), map_y, (uint8_t)(block->base_tile + i));
-    }
-}
-
-static void update_text_pair_block(const struct TextPairBlock *block,
-    const char *top_text, const char *bottom_text)
-{
-    clear_text_tiles(block->bg, block->span);
-    draw_text(0, 0, top_text, block->fg);
-    draw_text(0, 8, bottom_text, block->fg);
-    render_text(block->base_tile, block->span);
 }
 
 static void draw_field_value(uint16_t x, uint8_t y, uint8_t width,
@@ -225,7 +128,7 @@ static void draw_bet_entry(uint8_t icon_tile, uint8_t marker_tile, uint8_t map_y
 {
     draw_tilemap(1, map_y, icon_tile);
     draw_tilemap(2, map_y, marker_tile);
-    draw_text_strip(4, map_y, text, COL_WHITE, COL_BLACK);
+    text_draw_strip_alloc(4, map_y, text, COL_WHITE, COL_BLACK, 4, false);
 }
 
 static uint8_t selected_row_y(void)
@@ -573,7 +476,7 @@ static void refresh_betting_text_blocks(void)
     }
 
     set_font(FONT_NICETY_BOLD);
-    update_text_pair_block(&betting_summary_block, "BET SHEET", summary_line);
+    text_update_pair_block(&betting_summary_block, "BET SHEET", summary_line);
     set_font(FONT_NICETY);
     update_wager_block(&betting_wager_block,
         bet_type_name[wager->type],
@@ -591,7 +494,7 @@ static void draw_template_screen(void)
     char entry_line[16];
 
     fill_tilemap(TILE_COLOR_BLACK, 0, 0, TILES_ACROSS, TILES_DOWN);
-    reset_text_tile_arena();
+    text_reset_arena(TEXT_TILE_ARENA_BASE, TEXT_TILE_ARENA_LIMIT);
 
     for(uint8_t x = 0; x < 17u; x++) {
         draw_tilemap((uint8_t)(x + 1u), 0, (uint8_t)(TILE_COLOR_TITLE + x));
@@ -622,9 +525,9 @@ static void draw_template_screen(void)
     };
     draw_tilemap_array(0, 11, (uint8_t *)prototype_track_row, sizeof(prototype_track_row));
 
-    init_text_pair_block(&betting_summary_block, 3, 3,
+    text_init_pair_block(&betting_summary_block, 3, 3,
         BETTING_SUMMARY_SPAN, COL_WHITE, COL_BLACK);
-    init_text_pair_block(&betting_wager_block, 4, 6,
+    text_init_pair_block(&betting_wager_block, 4, 6,
         BETTING_WAGER_SPAN, COL_LIGHT_GRAY, COL_BLACK);
     refresh_betting_text_blocks();
 
@@ -636,7 +539,7 @@ static void draw_template_screen(void)
         draw_bet_entry(horse_icon_tile(horse->color), entry_marker_tile(i), (uint8_t)(7u + i), entry_line);
     }
 
-    draw_text_pair(1, 13,
+    text_draw_pair_alloc(1, 13,
         "L/R FIELD A BET",
         "U/D EDIT  B BACK",
         COL_LIGHT_GRAY, COL_BLACK);
@@ -817,7 +720,7 @@ void init_gameover(void)
     render_tilemap(1);
     render_tilemap(0);
 
-    reset_text_tile_arena();
+    text_reset_arena(TEXT_TILE_ARENA_BASE, TEXT_TILE_ARENA_LIMIT);
 
     for(uint8_t y = 0; y < TILES_DOWN; y++) {
         for(uint8_t x = 0; x < TILES_ACROSS; x++) {
@@ -826,9 +729,9 @@ void init_gameover(void)
     }
 
     set_font(FONT_NICETY_BOLD);
-    draw_text_strip(6, 5, "TODO", COL_RED, COL_DARK_RED);
+    text_draw_strip_alloc(6, 5, "TODO", COL_RED, COL_DARK_RED, 4, false);
     set_font(FONT_NICETY);
-    draw_text_strip(2, 8, "replace with game-over/results", COL_WHITE, COL_BLACK);
+    text_draw_strip_alloc(2, 8, "replace with game-over/results", COL_WHITE, COL_BLACK, 4, false);
 
     render_tilemap(0);
     clear_sprites();
