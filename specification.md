@@ -44,11 +44,9 @@ No additional betting types, horse management systems, career progression, comme
 
 ### Players
 
-- Support 1 to 6 bettors.
-- Betting is turn-based and pass-and-play.
+- Support 1 to 6 human bettors using pass-and-play betting entry.
 - Support 0, 1, or 2 human jockeys during each race.
-- If two SNES controllers are connected, both outside horses can be human-controlled.
-- If only one SNES controller is available, one outside horse can be human-controlled and the other remains CPU-controlled.
+- Because there is only one controller, at most one outside horse can be human-controlled during a race.
 - If no jockey chooses to ride, all 4 horses are CPU-controlled.
 
 ### Stable

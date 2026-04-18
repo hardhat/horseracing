@@ -116,6 +116,7 @@ struct SessionState
     uint8_t jockey_count;
     uint8_t current_race;
     uint8_t active_bettor;
+    uint8_t betting_complete;
     uint8_t selected_entry;
     uint8_t selected_field;
 };

@@ -20,7 +20,7 @@ The MVP is the smallest version that delivers the complete original game loop:
 - [ ] Mark busted bettors as out of the game.
 - [x] Implement the betting sheet screen.
 - [x] Show race number, entrants, odds, distance, surface, and bettor bankrolls on the betting sheet.
-- [ ] Implement turn-based pass-and-play betting entry.
+- [x] Implement turn-based pass-and-play betting entry.
 - [x] Implement Win bets.
 - [ ] Implement Exacta bets.
 - [x] Lock in wagers and deduct bankroll immediately on confirmation.
@@ -92,7 +92,7 @@ Build these in order. Later steps should not start until their prerequisites are
 #### Step 3: Betting Phase
 
 - [x] Implement the betting sheet logic.
-- [ ] Implement turn-based pass-and-play wager entry.
+- [x] Implement turn-based pass-and-play wager entry.
 - [ ] Implement tentative odds generation and update odds as bets are placed.
 - [x] Implement Win bet entry and validation.
 - [ ] Implement Exacta bet entry and validation.
@@ -227,7 +227,7 @@ Tasks:
 - [ ] Mark busted bettors as out of the game.
 - [x] Implement the betting sheet logic.
 - [x] Show race number, entrants, odds, distance, surface, and bettor bankrolls.
-- [ ] Implement pass-and-play wager entry.
+- [x] Implement pass-and-play wager entry.
 - [x] Implement Win bets.
 - [ ] Implement Exacta bets.
 - [x] Deduct bankroll immediately when a wager is confirmed.
