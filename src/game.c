@@ -22,6 +22,8 @@ static uint8_t race_finish_order[4];
 static uint8_t race_finish_count;
 static uint8_t race_controlled_entry;
 static uint16_t race_tick;
+static uint8_t race_show_results;
+static uint16_t race_result_timer;
 
 static struct TextPairBlock betting_summary_block;
 static struct TextPairBlock betting_wager_block;
@@ -69,6 +71,8 @@ static const uint8_t distance_groups[4][2] = {
 };
 
 static const uint8_t race_lane_y[4] = { 4u, 6u, 8u, 10u };
+
+#define RACE_RESULT_DELAY ((uint16_t)150u)
 
 static void copy_padded_text(char *buffer, uint8_t width, const char *value)
 {
@@ -760,6 +764,137 @@ static uint8_t controlled_race_entry(void)
     }
 }
 
+static void prepare_next_race(void)
+{
+    game.session.flow_phase = RACE_FLOW_BETTING;
+    game.session.betting_complete = 0u;
+    game.session.selected_field = BETTING_FIELD_HORSE;
+    game.session.selected_exacta_pick = 0u;
+    game.session.selected_entry = 0u;
+    game.session.active_bettor = 0u;
+    game.session.jockey_assignment = JOCKEY_ASSIGN_CPU;
+    game.session.jockey_count = 0u;
+
+    for(uint8_t i = 0; i < game.session.bettor_count; i++) {
+        game.session.wagers[i].bettor_index = i;
+        reset_wager(&game.session.wagers[i]);
+    }
+
+    init_betting_turn();
+}
+
+static uint16_t wager_payout(const struct Wager *wager, const struct RaceCard *race)
+{
+    if(wager->confirmed == 0u || wager->type == BET_TYPE_NONE) {
+        return 0u;
+    }
+
+    if(wager->type == BET_TYPE_WIN) {
+        uint8_t winner = race->result.finish_order[0];
+
+        if(wager->first_pick == winner) {
+            return (uint16_t)(wager->amount * (uint16_t)(race->entries[winner].odds + 1u));
+        }
+        return 0u;
+    }
+
+    if(wager->type == BET_TYPE_EXACTA
+        && wager->first_pick == race->result.finish_order[0]
+        && wager->second_pick == race->result.finish_order[1]) {
+        return (uint16_t)(wager->amount * 16u);
+    }
+
+    return 0u;
+}
+
+static void finalize_bettor_activity(void)
+{
+    for(uint8_t i = 0; i < game.session.bettor_count; i++) {
+        game.session.bettors[i].active = (game.session.bettors[i].bankroll != 0u) ? 1u : 0u;
+    }
+}
+
+static void settle_race_wagers(void)
+{
+    struct RaceCard *race = &game.session.races[game.session.current_race];
+
+    for(uint8_t i = 0; i < game.session.bettor_count; i++) {
+        uint16_t payout = wager_payout(&game.session.wagers[i], race);
+
+        game.session.bettors[i].bankroll = (uint16_t)(game.session.bettors[i].bankroll + payout);
+    }
+
+    finalize_bettor_activity();
+}
+
+static void record_race_result(void)
+{
+    struct RaceCard *race = &game.session.races[game.session.current_race];
+
+    for(uint8_t i = 0; i < 4u; i++) {
+        race->result.finish_order[i] = race_finish_order[i];
+    }
+
+    race->result.winning_time = (uint16_t)(600u + race_tick * 3u);
+}
+
+static void render_race_results_screen(void)
+{
+    struct RaceCard *race = &game.session.races[game.session.current_race];
+    char line[20];
+
+    fill_tilemap(TILE_COLOR_BLACK, 0, 0, TILES_ACROSS, TILES_DOWN);
+    render_tilemap(1);
+
+    set_font(FONT_NICETY_BOLD);
+    text_draw_strip_alloc(4, 1, "RACE RESULTS", COL_WHITE, COL_BLACK, 4, false);
+    set_font(FONT_NICETY);
+
+    sprintf(line, "WIN %u", (unsigned)race->result.winning_time);
+    text_draw_strip_alloc(6, 3, line, COL_LIGHT_GRAY, COL_BLACK, 4, false);
+
+    for(uint8_t i = 0; i < 4u; i++) {
+        uint8_t entry_index = race->result.finish_order[i];
+        struct Horse *horse = &game.session.stable[race->entries[entry_index].horse_index];
+
+        sprintf(line, "%u %s", (unsigned)(i + 1u), horse_color_name[horse->color]);
+        text_draw_strip_alloc(4, (uint8_t)(5u + i * 2u), line, COL_WHITE, COL_BLACK, 4, false);
+    }
+
+    text_draw_pair_alloc(2, 13,
+        "SETTLING BANKS",
+        "NEXT RACE AUTO",
+        COL_LIGHT_GRAY, COL_BLACK);
+
+    render_tilemap(0);
+}
+
+static void finish_race_and_show_results(void)
+{
+    if(race_show_results != 0u) {
+        return;
+    }
+
+    record_race_result();
+    settle_race_wagers();
+    race_show_results = 1u;
+    race_result_timer = RACE_RESULT_DELAY;
+    clear_sprites();
+    render_race_results_screen();
+}
+
+static void advance_after_results(void)
+{
+    if(game.session.current_race + 1u < 10u) {
+        game.session.current_race++;
+        game.resume_session = 1u;
+        set_state(GAME_STATE_GAME);
+        return;
+    }
+
+    set_state(GAME_STATE_MENU);
+}
+
 static void render_race_prototype_rows(void)
 {
     struct RaceCard *race = &game.session.races[game.session.current_race];
@@ -1016,6 +1151,18 @@ void resume_game(void)
 
 void init_game(void)
 {
+    if(game.resume_session != 0u) {
+        debug_log("game: resume betting screen");
+        memset(held, 0, sizeof(held));
+        game.resume_session = 0u;
+        game.cursor_x = 0;
+        game.cursor_y = 0;
+        prepare_next_race();
+        clear_sprites();
+        resume_game();
+        return;
+    }
+
     debug_log("game: init placeholder screen");
 
     memset(held, 0, sizeof(held));
@@ -1258,6 +1405,8 @@ void init_gameover(void)
     race_finish_count = 0u;
     race_controlled_entry = controlled_race_entry();
     race_tick = 0u;
+    race_show_results = 0u;
+    race_result_timer = 0u;
 
     fill_tilemap(TILE_COLOR_BLACK, 0, 0, TILES_ACROSS, TILES_DOWN);
     fill_tilemap(TILE_TRACK_UTIL_DRY_0, 0, 2, TILES_ACROSS, 1);
@@ -1293,6 +1442,10 @@ void init_gameover(void)
 
 void input_gameover(uint8_t key, bool down)
 {
+    if(race_show_results != 0u) {
+        return;
+    }
+
     if(key < MAX_INPUT) {
         race_held[key] = down;
     }
@@ -1304,9 +1457,23 @@ void input_gameover(uint8_t key, bool down)
 
 void update_gameover(void)
 {
+    if(race_show_results != 0u) {
+        if(race_result_timer > 0u) {
+            race_result_timer--;
+        }
+
+        if(race_result_timer == 0u) {
+            advance_after_results();
+        }
+        return;
+    }
+
     race_tick++;
 
     if((race_tick & 0x07u) != 0u || race_finish_count >= 4u) {
+        if(race_finish_count >= 4u) {
+            finish_race_and_show_results();
+        }
         return;
     }
 
@@ -1315,6 +1482,10 @@ void update_gameover(void)
     }
 
     render_race_prototype_rows();
+
+    if(race_finish_count >= 4u) {
+        finish_race_and_show_results();
+    }
 }
 
 void draw_gameover(void)

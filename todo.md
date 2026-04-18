@@ -48,12 +48,12 @@ The MVP is the smallest version that delivers the complete original game loop:
 - [ ] Implement late-race CPU whip behavior.
 - [ ] Add visible furlong markers.
 - [ ] Trigger a cue as the leader approaches each furlong marker.
-- [ ] Detect finish order for all 4 horses.
-- [ ] Display winning time.
-- [ ] Display tote-board-style race results.
-- [ ] Settle Win and Exacta payouts.
-- [ ] Update bettor bankrolls after each race.
-- [ ] Advance automatically from race results to the next betting phase.
+- [x] Detect finish order for all 4 horses.
+- [x] Display winning time.
+- [x] Display tote-board-style race results.
+- [x] Settle Win and Exacta payouts.
+- [x] Update bettor bankrolls after each race.
+- [x] Advance automatically from race results to the next betting phase.
 - [ ] End the session after race 10.
 - [ ] Display final standings and overall winner.
 - [x] Build a minimal tile set that fits within the 256-tile budget.
@@ -114,7 +114,7 @@ Build these in order. Later steps should not start until their prerequisites are
 
 #### Step 6: Core Race Simulation
 
-- [ ] Implement the side-view race simulation.
+- [x] Implement the side-view race simulation.
 - [ ] Implement four race lanes and inside-lane path advantage.
 - [ ] Implement integer-only pace simulation.
 - [ ] Apply distance, surface, and fatigue effects during the race.
@@ -124,7 +124,7 @@ Build these in order. Later steps should not start until their prerequisites are
 - [ ] Implement Whip behavior.
 - [ ] Implement late-race CPU whip usage.
 - [ ] Implement furlong marker state and leader-based timing.
-- [ ] Detect finish order and winning time.
+- [x] Detect finish order and winning time.
 
 #### Step 7: Race Presentation Integration
 
@@ -132,11 +132,11 @@ Build these in order. Later steps should not start until their prerequisites are
 
 #### Step 8: Settlement And Session Progression
 
-- [ ] Implement results flow.
-- [ ] Implement Win bet settlement.
-- [ ] Implement Exacta bet settlement.
-- [ ] Update bankrolls after each race.
-- [ ] Advance automatically to the next race.
+- [x] Implement results flow.
+- [x] Implement Win bet settlement.
+- [x] Implement Exacta bet settlement.
+- [x] Update bankrolls after each race.
+- [x] Advance automatically to the next race.
 - [ ] Implement end-of-session standings after race 10.
 
 ### Art
@@ -266,7 +266,7 @@ Get the race itself running with minimal presentation but correct gameplay behav
 Tasks:
 
 - [x] Implement the starting gate sequence.
-- [ ] Implement side-view race simulation for 4 horses.
+- [x] Implement side-view race simulation for 4 horses.
 - [ ] Implement foreground and background scrolling.
 - [ ] Implement four race lanes with inside-lane advantage.
 - [ ] Implement lane changing for human jockeys.
@@ -277,14 +277,14 @@ Tasks:
 - [ ] Implement Whip behavior.
 - [ ] Implement late-race CPU whip usage.
 - [ ] Implement furlong markers and leader-based timing.
-- [ ] Detect finish order and winning time.
+- [x] Detect finish order and winning time.
 
 Completion gate:
 
-- [ ] A race can be started from the betting phase and run to completion.
+- [x] A race can be started from the betting phase and run to completion.
 - [ ] Human jockey controls affect at least the outside horses correctly.
 - [ ] CPU horses show distinct behavior based on traits, surface, and distance.
-- [ ] Finish order and winning time are recorded correctly.
+- [x] Finish order and winning time are recorded correctly.
 
 ### Milestone 5: Session Loop Completion
 
@@ -297,10 +297,10 @@ Tasks:
 - [x] Support all-CPU races.
 - [x] Support one human-controlled outside horse.
 - [ ] Support two human-controlled outside horses when two controllers are present.
-- [ ] Display tote-board-style race results.
-- [ ] Settle Win and Exacta payouts.
-- [ ] Update bettor bankrolls after each race.
-- [ ] Advance automatically from results to the next betting phase.
+- [x] Display tote-board-style race results.
+- [x] Settle Win and Exacta payouts.
+- [x] Update bettor bankrolls after each race.
+- [x] Advance automatically from results to the next betting phase.
 - [ ] End the session after race 10.
 - [ ] Display final standings and overall winner.
 
