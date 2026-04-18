@@ -870,6 +870,7 @@ static void render_race_results_screen(void)
 
     fill_tilemap(TILE_COLOR_BLACK, 0, 0, TILES_ACROSS, TILES_DOWN);
     render_tilemap(1);
+    text_reset_arena(TEXT_TILE_ARENA_BASE, TEXT_TILE_ARENA_LIMIT);
 
     set_font(FONT_NICETY_BOLD);
     text_draw_strip_alloc(4, 1, "RACE RESULTS", COL_WHITE, COL_BLACK, 4, false);
@@ -901,6 +902,7 @@ static void render_final_standings_screen(void)
 
     fill_tilemap(TILE_COLOR_BLACK, 0, 0, TILES_ACROSS, TILES_DOWN);
     render_tilemap(1);
+    text_reset_arena(TEXT_TILE_ARENA_BASE, TEXT_TILE_ARENA_LIMIT);
 
     build_standings_order();
     winner_index = standings_order[0];
