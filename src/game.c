@@ -59,6 +59,12 @@ static const char *const surface_name[SURFACE_COUNT] = {
     "TURF",
 };
 
+static const char surface_code[SURFACE_COUNT] = {
+    'D',
+    'M',
+    'T',
+};
+
 static const char *const bet_type_name[] = {
     "NONE",
     "WIN",
@@ -435,6 +441,38 @@ static void assign_race_odds(struct RaceCard *race)
     }
 }
 
+static uint8_t pack_top_two_colors(const struct RaceCard *race)
+{
+    uint8_t winner_entry = race->result.finish_order[0];
+    uint8_t runner_up_entry = race->result.finish_order[1];
+    uint8_t winner_color = game.session.stable[race->entries[winner_entry].horse_index].color;
+    uint8_t runner_up_color = game.session.stable[race->entries[runner_up_entry].horse_index].color;
+
+    return (uint8_t)((winner_color << 4) | runner_up_color);
+}
+
+static void append_past_performance(struct Horse *horse,
+    uint8_t distance_furlongs, uint8_t surface, uint8_t finish_position,
+    uint8_t top_two_colors, uint16_t finish_time)
+{
+    struct PastPerformance performance;
+
+    performance.distance_furlongs = distance_furlongs;
+    performance.surface = surface;
+    performance.finish_position = finish_position;
+    performance.top2 = top_two_colors;
+    performance.finish_time = finish_time;
+
+    if(horse->history_count < 3u) {
+        horse->history[horse->history_count] = performance;
+        horse->history_count++;
+        return;
+    }
+
+    memmove(&horse->history[0], &horse->history[1], sizeof(horse->history[0]) * 2u);
+    horse->history[2] = performance;
+}
+
 static void init_generated_session(void)
 {
     uint8_t configured_bettors;
@@ -455,6 +493,8 @@ static void init_generated_session(void)
     game.session.selected_entry = 0;
     game.session.selected_exacta_pick = 0;
     game.session.selected_field = BETTING_FIELD_HORSE;
+    game.session.past_performance_active = 0u;
+    game.session.past_performance_entry = 0u;
     game.session.flow_phase = RACE_FLOW_BETTING;
     game.session.jockey_assignment = JOCKEY_ASSIGN_CPU;
 
@@ -773,6 +813,8 @@ static void prepare_next_race(void)
     game.session.selected_field = BETTING_FIELD_HORSE;
     game.session.selected_exacta_pick = 0u;
     game.session.selected_entry = 0u;
+    game.session.past_performance_active = 0u;
+    game.session.past_performance_entry = 0u;
     game.session.active_bettor = 0u;
     game.session.jockey_assignment = JOCKEY_ASSIGN_CPU;
     game.session.jockey_count = 0u;
@@ -855,12 +897,26 @@ static void settle_race_wagers(void)
 static void record_race_result(void)
 {
     struct RaceCard *race = &game.session.races[game.session.current_race];
+    uint8_t top_two_colors;
 
     for(uint8_t i = 0; i < 4u; i++) {
         race->result.finish_order[i] = race_finish_order[i];
     }
 
     race->result.winning_time = (uint16_t)(600u + race_tick * 3u);
+    top_two_colors = pack_top_two_colors(race);
+
+    for(uint8_t i = 0; i < 4u; i++) {
+        uint8_t entry_index = race->result.finish_order[i];
+        struct Horse *horse = &game.session.stable[race->entries[entry_index].horse_index];
+
+        append_past_performance(horse,
+            race->distance_furlongs,
+            race->surface,
+            (uint8_t)(i + 1u),
+            top_two_colors,
+            race->result.winning_time);
+    }
 }
 
 static void render_race_results_screen(void)
@@ -987,6 +1043,60 @@ static void render_race_prototype_rows(void)
     render_tilemap(0);
 }
 
+static void cycle_past_performance_entry(int8_t delta)
+{
+    uint8_t next = game.session.past_performance_entry;
+
+    if(delta > 0) {
+        next = (uint8_t)((next + 1u) & 0x03u);
+    } else if(delta < 0) {
+        next = (uint8_t)((next + 3u) & 0x03u);
+    }
+
+    game.session.past_performance_entry = next;
+}
+
+static void open_past_performance_view(void)
+{
+    game.session.past_performance_active = 1u;
+    game.session.past_performance_entry = game.session.selected_entry & 0x03u;
+}
+
+static void close_past_performance_view(void)
+{
+    game.session.past_performance_active = 0u;
+}
+
+static void render_past_performance_rows(void)
+{
+    struct RaceCard *race = &game.session.races[game.session.current_race];
+    struct RaceEntry *entry = &race->entries[game.session.past_performance_entry];
+    struct Horse *horse = &game.session.stable[entry->horse_index];
+    char line[20];
+
+    text_draw_strip_alloc(1, 7, " F S TIME P  TOP2 ", COL_LIGHT_GRAY, COL_BLACK, 4, false);
+
+    if(horse->history_count == 0u) {
+        text_draw_strip_alloc(3, 9, "NO PRIOR RUNS", COL_WHITE, COL_BLACK, 4, false);
+        return;
+    }
+
+    for(uint8_t i = 0; i < horse->history_count; i++) {
+        const struct PastPerformance *performance = &horse->history[horse->history_count - 1u - i];
+        uint8_t winner_color = (uint8_t)(performance->top2 >> 4);
+        uint8_t runner_up_color = (uint8_t)(performance->top2 & 0x0Fu);
+
+        sprintf(line, "%2uF %c %4u %u %s/%s",
+            (unsigned)performance->distance_furlongs,
+            surface_code[performance->surface],
+            (unsigned)performance->finish_time,
+            (unsigned)performance->finish_position,
+            horse_color_short_name[winner_color],
+            horse_color_short_name[runner_up_color]);
+        text_draw_strip_alloc(0, (uint8_t)(8u + i), line, COL_WHITE, COL_BLACK, 4, false);
+    }
+}
+
 static void advance_race_entry(uint8_t entry_index, uint8_t distance)
 {
     uint8_t max_progress = 16u;
@@ -1041,6 +1151,29 @@ static void refresh_betting_text_blocks(void)
     const char *help_bottom;
     const char *state_label;
     const char *horse_label = "HORSE";
+
+    if(game.session.past_performance_active != 0u) {
+        struct RaceEntry *entry = &race->entries[game.session.past_performance_entry];
+        struct Horse *horse = &game.session.stable[entry->horse_index];
+
+        set_font(FONT_NICETY_BOLD);
+        text_update_pair_block(&betting_summary_block,
+            "PAST PERFS",
+            horse_color_name[horse->color]);
+        set_font(FONT_NICETY);
+
+        sprintf(title_line, "R%u %s %uF  %u-1",
+            (unsigned)(game.session.current_race + 1u),
+            surface_name[race->surface],
+            (unsigned)race->distance_furlongs,
+            (unsigned)entry->odds);
+        sprintf(summary_line, "LAST %u RUNS", (unsigned)horse->history_count);
+        text_update_pair_block(&betting_wager_block, title_line, summary_line);
+        text_update_pair_block(&betting_help_block,
+            "Y CLOSE L/R HORSE",
+            "B RETURN   LAST 3");
+        return;
+    }
 
     if(game.session.flow_phase == RACE_FLOW_START_GATE) {
         sprintf(title_line, "AT GATE");
@@ -1190,6 +1323,13 @@ static void draw_template_screen(void)
         BETTING_WAGER_SPAN, COL_LIGHT_GRAY, COL_BLACK);
     refresh_betting_text_blocks();
 
+    if(game.session.past_performance_active != 0u) {
+        render_past_performance_rows();
+        render_tilemap(0);
+        render_tilemap(1);
+        return;
+    }
+
     for(uint8_t i = 0; i < 4; i++) {
         struct RaceEntry *entry = &race->entries[i];
         struct Horse *horse = &game.session.stable[entry->horse_index];
@@ -1301,6 +1441,36 @@ void input_game(uint8_t key, bool down)
             case INPUT_B:
                 cancel_start_gate();
                 refresh_betting_text_blocks();
+                break;
+
+            default:
+                break;
+        }
+        return;
+    }
+
+    if(game.session.past_performance_active != 0u) {
+        if(!down) {
+            return;
+        }
+
+        switch(key) {
+            case INPUT_Y:
+            case INPUT_B:
+                close_past_performance_view();
+                resume_game();
+                break;
+
+            case INPUT_LEFT:
+            case INPUT_L:
+                cycle_past_performance_entry(-1);
+                resume_game();
+                break;
+
+            case INPUT_RIGHT:
+            case INPUT_R:
+                cycle_past_performance_entry(1);
+                resume_game();
                 break;
 
             default:
@@ -1436,6 +1606,11 @@ void input_game(uint8_t key, bool down)
             break;
         }
 
+        case INPUT_Y:
+            open_past_performance_view();
+            resume_game();
+            break;
+
         default:
             break;
     }
@@ -1450,7 +1625,8 @@ void update_game(void)
 void draw_game(void)
 {
     reset_sprite();
-    if(game.session.betting_complete == 0u
+    if(game.session.past_performance_active == 0u
+        && game.session.betting_complete == 0u
         && game.session.selected_field == BETTING_FIELD_HORSE) {
         add_sprite(0, (uint8_t)(selected_row_y() * 16u), TILE_CURSOR);
     }

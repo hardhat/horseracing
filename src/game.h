@@ -135,6 +135,8 @@ struct SessionState
     uint8_t selected_entry;
     uint8_t selected_exacta_pick;
     uint8_t selected_field;
+    uint8_t past_performance_active;
+    uint8_t past_performance_entry;
     uint8_t flow_phase;
     uint8_t jockey_assignment;
 };

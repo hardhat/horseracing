@@ -1,5 +1,13 @@
 # Horse Racing Todo
 
+## Immediate Next Tasks
+
+These are the next implementation targets with the best gameplay payoff and the fewest prerequisite gaps.
+
+- [x] Capture per-horse past performances after each race and roll history to the last 3 runs.
+- [x] Add a past-performance view during betting with `Y` toggle and `L/R` browsing.
+- [ ] Update displayed odds as wagers are confirmed and store locked Win odds for payout settlement.
+
 ## MVP
 
 The MVP is the smallest version that delivers the complete original game loop:
@@ -17,19 +25,20 @@ The MVP is the smallest version that delivers the complete original game loop:
 - [x] Generate race length per race using the original grouped structure.
 - [x] Implement bettor bankrolls with a $750 starting value.
 - [x] Enforce the $250 maximum wager or current bankroll, whichever is lower.
-- [ ] Mark busted bettors as out of the game.
+- [x] Prevent busted bettors from placing further bets.
+- [ ] Show busted bettors as out of the game in the UI.
 - [x] Implement the betting sheet screen.
 - [x] Show race number, entrants, odds, distance, surface, and bettor bankrolls on the betting sheet.
 - [x] Implement turn-based pass-and-play betting entry.
 - [x] Implement Win bets.
 - [x] Implement Exacta bets.
 - [x] Lock in wagers and deduct bankroll immediately on confirmation.
-- [ ] Implement tentative odds display for the current race.
-- [ ] Adjust odds as wagers are placed.
-- [ ] Implement the past performance screen.
-- [ ] Store and display up to the last 3 runs per horse.
-- [ ] Show enough past data to compare distance, surface, time, and finish summary.
-- [ ] Support switching between betting and past performance views during betting.
+- [x] Implement tentative odds display for the current race.
+- [ ] Adjust displayed odds as wagers are placed and lock Win payout odds at confirmation.
+- [x] Implement the past performance screen.
+- [x] Store and display up to the last 3 runs per horse.
+- [x] Show enough past data to compare distance, surface, time, and finish summary.
+- [x] Support switching between betting and past performance views during betting.
 - [x] Implement jockey assignment before each race.
 - [x] Support all-CPU races.
 - [x] Support one human-controlled outside horse.
@@ -87,22 +96,24 @@ Build these in order. Later steps should not start until their prerequisites are
 - [x] Generate persistent horse traits for pace, endurance, break speed, stretch speed, and surface affinity.
 - [x] Generate a 10-race program with entrants, distance, and surface.
 - [x] Implement bankroll tracking with $750 starting stake and $250 max wager cap.
-- [ ] Implement elimination of busted bettors.
+- [x] Prevent busted bettors from wagering in later rounds.
+- [ ] Surface busted-bettor status in the UI.
 
 #### Step 3: Betting Phase
 
 - [x] Implement the betting sheet logic.
 - [x] Implement turn-based pass-and-play wager entry.
-- [ ] Implement tentative odds generation and update odds as bets are placed.
+- [x] Implement tentative odds generation and display.
+- [ ] Update displayed odds as bets are placed and lock Win payout odds at confirmation.
 - [x] Implement Win bet entry and validation.
 - [x] Implement Exacta bet entry and validation.
 - [x] Deduct bankroll immediately when a wager is confirmed.
 
 #### Step 4: Race History And Handicapping Data
 
-- [ ] Implement past-performance data capture for every completed race.
-- [ ] Limit displayed past performances to the last 3 runs per horse.
-- [ ] Implement the past performance screen and navigation back to betting.
+- [x] Implement past-performance data capture for every completed race.
+- [x] Limit displayed past performances to the last 3 runs per horse.
+- [x] Implement the past performance screen and navigation back to betting.
 
 #### Step 5: Jockey Assignment And Race Setup
 
@@ -175,6 +186,7 @@ Build these in order. Later steps should not start until their prerequisites are
 - [ ] Verify two-controller jockey support works when available.
 - [ ] Verify bettors cannot wager more than bankroll or more than $250.
 - [ ] Verify busted bettors are removed cleanly from later betting rounds.
+- [ ] Verify busted bettors are visibly marked as out of the game.
 - [ ] Verify only the 4 current entrants can be selected for Win and Exacta bets.
 - [ ] Verify Exacta order matters and pays correctly at 15:1.
 - [ ] Verify odds update correctly as bets are placed.
@@ -224,18 +236,20 @@ Tasks:
 - [x] Generate a 10-race program with entrants, surfaces, and distance groups.
 - [x] Implement bankroll tracking with $750 starting stake.
 - [x] Enforce the $250 max wager cap.
-- [ ] Mark busted bettors as out of the game.
+- [x] Prevent busted bettors from placing further bets.
+- [ ] Show busted bettors as out of the game in the UI.
 - [x] Implement the betting sheet logic.
 - [x] Show race number, entrants, odds, distance, surface, and bettor bankrolls.
 - [x] Implement pass-and-play wager entry.
 - [x] Implement Win bets.
 - [x] Implement Exacta bets.
 - [x] Deduct bankroll immediately when a wager is confirmed.
-- [ ] Implement tentative odds generation and update logic.
+- [x] Implement tentative odds generation and display.
+- [ ] Update displayed odds as wagers are placed and lock Win payout odds at confirmation.
 
 Completion gate:
 
-- [ ] The first race can be configured and wagered entirely through the betting UI.
+- [x] The first race can be configured and wagered entirely through the betting UI.
 - [ ] Bankroll math is correct for valid and invalid wagers.
 - [x] Win and Exacta bets can be entered and stored correctly.
 
@@ -247,10 +261,10 @@ Support the original handicapping loop by capturing and displaying prior races.
 Tasks:
 
 - [ ] Implement race result records per horse.
-- [ ] Store up to the last 3 runs per horse.
-- [ ] Implement the past performance screen.
-- [ ] Show distance, surface, time, and finish summary for prior runs.
-- [ ] Support switching between betting and past performance views.
+- [x] Store up to the last 3 runs per horse.
+- [x] Implement the past performance screen.
+- [x] Show distance, surface, time, and finish summary for prior runs.
+- [x] Support switching between betting and past performance views.
 
 Completion gate:
 
@@ -321,7 +335,7 @@ Tasks:
 - [ ] Produce minimal title, betting-sheet, past-performance, race, tote-board, and standings visuals.
 - [ ] Produce readable font, numerals, and betting symbols.
 - [ ] Produce minimal horse and jockey art readable by color.
-- [ ] Produce dry, muddy, and turf visual variants.
+- [x] Produce dry, muddy, and turf visual variants.
 - [ ] Implement core audio cues: UI click, error buzz, call to post, gate clang, hoofbeats, furlong gong, whip crack, and crowd cheer.
 - [ ] Hook audio to the correct gameplay events.
 
