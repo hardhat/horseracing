@@ -39,7 +39,7 @@ gfx_sprite sprites[128];
 // Load buffer — pinned at 0xD000 (page boundary) so reads never cross a page.
 // Sized to hold the largest tileset (map.zts 2KB compressed).
 // Also used for text tile rendering (max 20 tiles × 256 bytes = 5 KB).
-__at(0xD000) uint8_t text_tiles[5120];
+__at(0xE000) uint8_t text_tiles[5120];
 const uint8_t *font = FONT_NICETY_BITMAP;
 
 uint8_t tilemap0[20*15];
