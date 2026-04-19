@@ -3,6 +3,15 @@
 #include<string.h>
 #include<stdarg.h>
 
+#ifndef __SDCC_VERSION_MAJOR
+#define __at(addr)
+#define __naked
+#define __sfr
+#define va_list struct {int dummy; }
+#define va_start(ap, last)
+#define va_end(ap)
+#endif
+
 #include<zos_sys.h>
 #include<zos_keyboard.h>
 #include<zos_vfs.h>

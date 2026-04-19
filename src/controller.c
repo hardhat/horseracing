@@ -3,6 +3,11 @@
  *
  * SPDX-License-Identifier: CC0-1.0
  */
+#ifndef __SDCC_VERSION_MAJOR
+#define __at(addr)
+#define __naked
+#define __sfr
+#endif
 
 #include <zos_errors.h>
 #include <zos_keyboard.h>

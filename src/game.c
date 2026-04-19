@@ -10,7 +10,7 @@
 
 #define TEXT_TILE_ARENA_BASE  ((uint8_t)0x9Cu)
 #define TEXT_TILE_ARENA_LIMIT ((uint8_t)0xFFu)
-#define BETTING_SUMMARY_SPAN  ((uint8_t)10u)
+#define BETTING_SUMMARY_SPAN  ((uint8_t)12u)
 #define BETTING_WAGER_SPAN    ((uint8_t)12u)
 
 struct Game game;
@@ -106,6 +106,57 @@ static void copy_padded_text(char *buffer, uint8_t width, const char *value)
     memset(buffer, ' ', width);
     memcpy(buffer, value, length);
     buffer[width] = '\0';
+}
+
+static uint8_t centered_strip_x(const char *text)
+{
+    uint8_t span = text_measure_span(text);
+
+    if(span >= TILES_ACROSS) {
+        return 0u;
+    }
+
+    return (uint8_t)((TILES_ACROSS - span) >> 1u);
+}
+
+static uint8_t horse_text_color(uint8_t color)
+{
+    switch(color) {
+        case HORSE_COLOR_GREEN:
+            return COL_GREEN;
+
+        case HORSE_COLOR_GOLD:
+            return COL_YELLOW;
+
+        case HORSE_COLOR_RED:
+            return COL_RED;
+
+        case HORSE_COLOR_BLUE:
+            return COL_BLUE;
+
+        case HORSE_COLOR_PURPLE:
+            return COL_MAGENTA;
+
+        case HORSE_COLOR_BROWN:
+            return COL_BROWN;
+
+        case HORSE_COLOR_BLACK:
+            return COL_DARK_GRAY;
+
+        default:
+            return COL_WHITE;
+    }
+}
+
+static void draw_board_shell(uint8_t fill_tile, const char *title)
+{
+    fill_tilemap(fill_tile, 0, 0, TILES_ACROSS, TILES_DOWN);
+    fill_tilemap(TILE_COLOR_BLACK, 1, 1, 18, 13);
+    fill_tilemap(fill_tile, 2, 2, 16, 11);
+    fill_tilemap(TILE_COLOR_BLACK, 2, 2, 16, 2);
+    fill_tilemap(TILE_COLOR_BLACK, 2, 5, 16, 1);
+    fill_tilemap(TILE_COLOR_BLACK, 2, 12, 16, 2);
+    text_draw_strip_alloc(centered_strip_x(title), 2, title, COL_YELLOW, COL_BLACK, 4, true);
 }
 
 static bool bettor_is_busted(uint8_t bettor_index)
@@ -332,11 +383,17 @@ static void update_jockey_block(const struct TextPairBlock *block,
 }
 
 static void draw_bet_entry(uint8_t icon_tile, uint8_t marker_tile, uint8_t map_y,
-    const char *text)
+    const char *horse_name, uint8_t horse_color, uint8_t odds)
 {
     draw_tilemap(1, map_y, icon_tile);
     draw_tilemap(2, map_y, marker_tile);
-    text_draw_strip_alloc(4, map_y, text, COL_WHITE, COL_BLACK, 4, false);
+    text_draw_strip_alloc(4, map_y, horse_name, horse_text_color(horse_color), COL_BLACK, 4, false);
+
+    {
+        char line[8];
+        sprintf(line, "%u-1", (unsigned)odds);
+        text_draw_strip_alloc(14, map_y, line, COL_YELLOW, COL_BLACK, 4, false);
+    }
 }
 
 static void assign_race_odds(struct RaceCard *race);
@@ -1202,37 +1259,51 @@ static void render_race_results_screen(void)
     render_tilemap(1);
     text_reset_arena(TEXT_TILE_ARENA_BASE, TEXT_TILE_ARENA_LIMIT);
 
+    draw_board_shell(TILE_TRACK_DRY_CLEAR_0, "OFFICIAL RESULTS");
     set_font(FONT_NICETY_BOLD);
-    text_draw_strip_alloc(4, 1, "RACE RESULTS", COL_WHITE, COL_BLACK, 4, false);
+    sprintf(line, "R%u  WIN %u",
+        (unsigned)(game.session.current_race + 1u),
+        (unsigned)race->result.winning_time);
+    text_draw_strip_alloc(centered_strip_x(line), 3, line, COL_WHITE, COL_BLACK, 4, true);
     set_font(FONT_NICETY);
-
-    sprintf(line, "WIN %u", (unsigned)race->result.winning_time);
-    text_draw_strip_alloc(6, 3, line, COL_LIGHT_GRAY, COL_BLACK, 4, false);
+    text_draw_strip_alloc(2, 5, "POS HORSE      ODDS", COL_LIGHT_GRAY, COL_BLACK, 4, true);
 
     for(uint8_t i = 0; i < 4u; i++) {
         uint8_t entry_index = race->result.finish_order[i];
+        struct RaceEntry *entry = &race->entries[entry_index];
         struct Horse *horse = &game.session.stable[race->entries[entry_index].horse_index];
+        uint8_t row_y = (uint8_t)(6u + i);
 
-        sprintf(line, "%u %s", (unsigned)(i + 1u), horse_color_name[horse->color]);
-        text_draw_strip_alloc(4, (uint8_t)(5u + i), line, COL_WHITE, COL_BLACK, 4, false);
+        sprintf(line, "%u", (unsigned)(i + 1u));
+        text_draw_strip_alloc(2, row_y, line, i == 0u ? COL_YELLOW : COL_WHITE, COL_BLACK, 4, false);
+        draw_tilemap(4, row_y, horse_icon_tile(horse->color));
+        text_draw_strip_alloc(5, row_y, horse_color_name[horse->color],
+            horse_text_color(horse->color), COL_BLACK, 4, false);
+        sprintf(line, "%u-1", (unsigned)entry->odds);
+        text_draw_strip_alloc(14, row_y, line, COL_YELLOW, COL_BLACK, 4, false);
     }
 
-    text_draw_strip_alloc(7, 9, "BETTORS", COL_LIGHT_GRAY, COL_BLACK, 4, false);
+    text_draw_strip_alloc(2, 10, "BETTORS", COL_LIGHT_GRAY, COL_BLACK, 4, true);
+    text_draw_strip_alloc(11, 10, "AUTO NEXT", COL_WHITE, COL_BLACK, 4, true);
 
     for(uint8_t i = 0; i < game.session.bettor_count; i++) {
         uint8_t x = (i & 1u) == 0u ? 2u : 11u;
-        uint8_t y = (uint8_t)(10u + (i >> 1u));
+        uint16_t payout = wager_payout(&game.session.wagers[i], race);
 
-        format_bettor_status(status_line, i);
-        text_draw_strip_alloc(x, y, status_line,
-            bettor_is_busted(i) ? COL_RED : COL_WHITE,
+        if(payout > 0u) {
+            sprintf(status_line, "B%u +$%u", (unsigned)(i + 1u), (unsigned)payout);
+        } else if(bettor_is_busted(i)) {
+            sprintf(status_line, "B%u OUT", (unsigned)(i + 1u));
+        } else if(game.session.wagers[i].type == BET_TYPE_NONE) {
+            sprintf(status_line, "B%u PASS", (unsigned)(i + 1u));
+        } else {
+            sprintf(status_line, "B%u MISS", (unsigned)(i + 1u));
+        }
+
+        text_draw_strip_alloc(x, (uint8_t)(11u + (i >> 1u)), status_line,
+            payout > 0u ? COL_YELLOW : (bettor_is_busted(i) ? COL_RED : COL_WHITE),
             COL_BLACK, 4, false);
     }
-
-    text_draw_pair_alloc(2, 13,
-        "SETTLING BANKS",
-        "NEXT RACE AUTO",
-        COL_LIGHT_GRAY, COL_BLACK);
 
     render_tilemap(0);
 }
@@ -1251,28 +1322,36 @@ static void render_final_standings_screen(void)
     build_standings_order();
     winner_index = standings_order[0];
 
+    draw_board_shell(TILE_TRACK_DRY_CLEAR_0, "FINAL STANDINGS");
     set_font(FONT_NICETY_BOLD);
-    text_draw_strip_alloc(2, 1, "FINAL STANDINGS", COL_WHITE, COL_BLACK, 4, false);
-    set_font(FONT_NICETY);
 
     format_bettor_status(status_line, winner_index);
-    sprintf(line, "WIN %s", status_line);
-    text_draw_strip_alloc(3, 3, line, COL_YELLOW, COL_BLACK, 4, false);
+    sprintf(line, "WINNER %s", status_line);
+    text_draw_strip_alloc(centered_strip_x(line), 3, line, COL_YELLOW, COL_BLACK, 4, true);
+    set_font(FONT_NICETY);
+    text_draw_strip_alloc(2, 5, "RK BETTOR     BANK", COL_LIGHT_GRAY, COL_BLACK, 4, true);
 
     for(uint8_t i = 0; i < game.session.bettor_count; i++) {
         uint8_t bettor_index = standings_order[i];
+        uint8_t row_y = (uint8_t)(6u + i);
 
-        format_bettor_status(status_line, bettor_index);
-        sprintf(line, "%u %s", (unsigned)(i + 1u), status_line);
-        text_draw_strip_alloc(4, (uint8_t)(4u + i), line,
+        sprintf(line, "%u", (unsigned)(i + 1u));
+        text_draw_strip_alloc(2, row_y, line, i == 0u ? COL_YELLOW : COL_WHITE, COL_BLACK, 4, false);
+        sprintf(status_line, "B%u", (unsigned)(bettor_index + 1u));
+        text_draw_strip_alloc(4, row_y, status_line,
             bettor_is_busted(bettor_index) ? COL_RED : COL_WHITE,
             COL_BLACK, 4, false);
+        if(bettor_is_busted(bettor_index)) {
+            text_draw_strip_alloc(11, row_y, "OUT", COL_RED, COL_BLACK, 4, false);
+        } else {
+            sprintf(status_line, "$%u", (unsigned)game.session.bettors[bettor_index].bankroll);
+            text_draw_strip_alloc(11, row_y, status_line,
+                i == 0u ? COL_YELLOW : COL_WHITE,
+                COL_BLACK, 4, false);
+        }
     }
 
-    text_draw_pair_alloc(3, 12,
-        "RACE 10 DONE",
-        "START MENU",
-        COL_LIGHT_GRAY, COL_BLACK);
+    text_draw_strip_alloc(4, 13, "RACE 10 DONE  START", COL_WHITE, COL_BLACK, 4, true);
 
     render_tilemap(0);
 }
@@ -1616,24 +1695,24 @@ static void refresh_betting_text_blocks(void)
         return;
     }
 
-    sprintf(title_line, "BETTOR %u/%u",
-        (unsigned)(game.session.active_bettor + 1u),
-        (unsigned)game.session.bettor_count);
+    strcpy(title_line, "ZEAL DOWNS");
 
     if(bettor_busted) {
-        sprintf(summary_line, "R%u %s %uF  OUT",
+        sprintf(summary_line, "R%u %s %uF B%u OUT",
             (unsigned)(game.session.current_race + 1u),
             surface_name[race->surface],
-            (unsigned)race->distance_furlongs);
+            (unsigned)race->distance_furlongs,
+            (unsigned)(game.session.active_bettor + 1u));
         strcpy(amount_value, " --- ");
         strcpy(horse_value, "OUT");
         horse_label = "STATUS";
         state_label = "BUST";
     } else {
-        sprintf(summary_line, "R%u %s %uF  $%u",
+        sprintf(summary_line, "R%u %s %uF B%u $%u",
             (unsigned)(game.session.current_race + 1u),
             surface_name[race->surface],
             (unsigned)race->distance_furlongs,
+            (unsigned)(game.session.active_bettor + 1u),
             (unsigned)bettor->bankroll);
     }
 
@@ -1698,15 +1777,11 @@ static void refresh_betting_text_blocks(void)
 static void draw_template_screen(void)
 {
     struct RaceCard *race = &game.session.races[game.session.current_race];
-    char entry_line[16];
 
     fill_tilemap(TILE_COLOR_BLACK, 0, 0, TILES_ACROSS, TILES_DOWN);
     text_reset_arena(TEXT_TILE_ARENA_BASE, TEXT_TILE_ARENA_LIMIT);
 
-    for(uint8_t x = 0; x < 17u; x++) {
-        draw_tilemap((uint8_t)(x + 1u), 0, (uint8_t)(TILE_COLOR_TITLE + x));
-        draw_tilemap((uint8_t)(x + 1u), 1, (uint8_t)(TILE_COLOR_TITLE + 17u + x));
-    }
+    draw_board_shell(surface_track_tile(race->surface), "ZEAL DOWNS");
 
     static const uint8_t prototype_track_row[] = {
         TILE_TRACK_DRY_GRANDSTAND_0,
@@ -1732,9 +1807,10 @@ static void draw_template_screen(void)
     };
     draw_tilemap_array(0, 11, (uint8_t *)prototype_track_row, sizeof(prototype_track_row));
 
-    text_init_pair_block(&betting_summary_block, 3, 3,
+    text_draw_strip_alloc(2, 5, "POST HORSE      ODDS", COL_LIGHT_GRAY, COL_BLACK, 4, true);
+    text_init_pair_block(&betting_summary_block, 4, 2,
         BETTING_SUMMARY_SPAN, COL_WHITE, COL_BLACK);
-    text_init_pair_block(&betting_wager_block, 4, 6,
+    text_init_pair_block(&betting_wager_block, 4, 4,
         BETTING_WAGER_SPAN, COL_LIGHT_GRAY, COL_BLACK);
     text_init_pair_block(&betting_help_block, 1, 13,
         BETTING_WAGER_SPAN, COL_LIGHT_GRAY, COL_BLACK);
@@ -1751,8 +1827,16 @@ static void draw_template_screen(void)
         struct RaceEntry *entry = &race->entries[i];
         struct Horse *horse = &game.session.stable[entry->horse_index];
 
-        sprintf(entry_line, "%-6s %u-1", horse_color_name[horse->color], (unsigned)entry->odds);
-        draw_bet_entry(horse_icon_tile(horse->color), entry_marker_tile(i), (uint8_t)(7u + i), entry_line);
+        draw_bet_entry(horse_icon_tile(horse->color), entry_marker_tile(i), (uint8_t)(7u + i),
+            horse_color_name[horse->color], horse->color, entry->odds);
+    }
+
+    {
+        char bank_line[20];
+        sprintf(bank_line, "BANKROLL B%u $%u",
+            (unsigned)(game.session.active_bettor + 1u),
+            (unsigned)game.session.bettors[game.session.active_bettor].bankroll);
+        text_draw_strip_alloc(centered_strip_x(bank_line), 11, bank_line, COL_YELLOW, COL_BLACK, 4, true);
     }
 
     render_tilemap(0);
