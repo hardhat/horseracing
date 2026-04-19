@@ -20,6 +20,8 @@ static uint16_t session_rng = 0x43E7u;
 static bool race_held[MAX_INPUT];
 static uint8_t race_progress[4];
 static uint8_t race_fatigue[4];
+static uint8_t race_coax_boost[4];
+static uint8_t race_whip_boost[4];
 static uint16_t race_distance_units[4];
 static uint8_t race_finish_order[4];
 static uint8_t race_finish_count;
@@ -1252,6 +1254,8 @@ static uint8_t race_step_distance(uint8_t entry_index)
     uint8_t fatigue_gain;
     int16_t pace_score;
     uint8_t distance = 1u;
+    uint8_t coax_boost = race_coax_boost[entry_index];
+    uint8_t whip_boost = race_whip_boost[entry_index];
 
     switch(phase) {
         case 0u:
@@ -1279,14 +1283,29 @@ static uint8_t race_step_distance(uint8_t entry_index)
 
     pace_score = (int16_t)(pace_score + horse->traits.surface_affinity[race->surface] - 8);
     pace_score = (int16_t)(pace_score - race_fatigue[entry_index]);
+    pace_score = (int16_t)(pace_score + coax_boost + whip_boost);
     pace_score = (int16_t)(pace_score + (int16_t)(next_random_u16() & 0x03u));
 
     if(entry_index == race_controlled_entry) {
         if(race_held[INPUT_Y]) {
-            pace_score = (int16_t)(pace_score + 2);
+            if(race_coax_boost[entry_index] < 3u) {
+                race_coax_boost[entry_index]++;
+            }
+            pace_score = (int16_t)(pace_score + 2 + race_coax_boost[entry_index]);
+        } else if(race_coax_boost[entry_index] > 0u) {
+            race_coax_boost[entry_index]--;
         }
+
         if(race_held[INPUT_B]) {
-            pace_score = (int16_t)(pace_score + 4);
+            race_whip_boost[entry_index] = (phase >= 2u) ? 5u : 3u;
+            pace_score = (int16_t)(pace_score + race_whip_boost[entry_index]);
+            if(phase >= 2u) {
+                pace_score = (int16_t)(pace_score + 3);
+            } else {
+                pace_score = (int16_t)(pace_score + 1);
+            }
+        } else if(race_whip_boost[entry_index] > 0u) {
+            race_whip_boost[entry_index]--;
         }
     }
 
@@ -1318,7 +1337,9 @@ static uint8_t race_step_distance(uint8_t entry_index)
             fatigue_gain++;
         }
         if(race_held[INPUT_B]) {
-            fatigue_gain = (uint8_t)(fatigue_gain + 3u);
+            fatigue_gain = (phase >= 2u)
+                ? (uint8_t)(fatigue_gain + 3u)
+                : (uint8_t)(fatigue_gain + 6u);
         }
     }
     if((race_tick & 0x0Fu) == 0u && race_fatigue[entry_index] > 0u) {
@@ -1841,6 +1862,8 @@ void init_gameover(void)
     memset(race_held, 0, sizeof(race_held));
     memset(race_progress, 0, sizeof(race_progress));
     memset(race_fatigue, 0, sizeof(race_fatigue));
+    memset(race_coax_boost, 0, sizeof(race_coax_boost));
+    memset(race_whip_boost, 0, sizeof(race_whip_boost));
     memset(race_distance_units, 0, sizeof(race_distance_units));
     memset(race_finish_order, 0xFF, sizeof(race_finish_order));
     race_finish_count = 0u;

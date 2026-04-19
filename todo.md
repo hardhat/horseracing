@@ -5,7 +5,7 @@
 These are the next implementation targets with the best gameplay payoff and the fewest prerequisite gaps.
 
 - [x] Implement integer-only pace simulation using horse traits, race distance, surface, and fatigue.
-- [ ] Make Coax and Whip materially affect race outcomes for the human-controlled outside horse.
+- [x] Make Coax and Whip materially affect race outcomes for the human-controlled outside horse.
 - [ ] Surface busted bettors as out of the game in the betting, results, and standings UI.
 
 ## MVP
@@ -52,8 +52,8 @@ The MVP is the smallest version that delivers the complete original game loop:
 - [x] Implement horse pace simulation using only integer arithmetic.
 - [x] Apply distance and surface effects to horse performance.
 - [x] Apply fatigue over race duration.
-- [ ] Implement Coax input with a modest temporary speed boost.
-- [ ] Implement Whip input with a strong temporary boost and heavy endurance cost.
+- [x] Implement Coax input with a modest temporary speed boost.
+- [x] Implement Whip input with a strong temporary boost and heavy endurance cost.
 - [ ] Implement late-race CPU whip behavior.
 - [ ] Add visible furlong markers.
 - [ ] Trigger a cue as the leader approaches each furlong marker.
@@ -130,8 +130,8 @@ Build these in order. Later steps should not start until their prerequisites are
 - [x] Apply distance, surface, and fatigue effects during the race.
 - [ ] Implement lane changing for human jockeys.
 - [ ] Implement CPU lane choice with rail preference and passing behavior.
-- [ ] Implement Coax behavior.
-- [ ] Implement Whip behavior.
+- [x] Implement Coax behavior.
+- [x] Implement Whip behavior.
 - [ ] Implement late-race CPU whip usage.
 - [ ] Implement furlong marker state and leader-based timing.
 - [x] Detect finish order and winning time.
