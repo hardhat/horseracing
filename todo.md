@@ -54,7 +54,7 @@ The MVP is the smallest version that delivers the complete original game loop:
 - [x] Apply fatigue over race duration.
 - [x] Implement Coax input with a modest temporary speed boost.
 - [x] Implement Whip input with a strong temporary boost and heavy endurance cost.
-- [ ] Implement late-race CPU whip behavior.
+- [x] Implement late-race CPU whip behavior.
 - [ ] Add visible furlong markers.
 - [ ] Trigger a cue as the leader approaches each furlong marker.
 - [x] Detect finish order for all 4 horses.
@@ -132,7 +132,7 @@ Build these in order. Later steps should not start until their prerequisites are
 - [ ] Implement CPU lane choice with rail preference and passing behavior.
 - [x] Implement Coax behavior.
 - [x] Implement Whip behavior.
-- [ ] Implement late-race CPU whip usage.
+- [x] Implement late-race CPU whip usage.
 - [ ] Implement furlong marker state and leader-based timing.
 - [x] Detect finish order and winning time.
 
@@ -182,7 +182,7 @@ Build these in order. Later steps should not start until their prerequisites are
 
 - [x] Extract the race simulation into a host-testable module.
 - [x] Add a separate Linux test Makefile delegated from the main Makefile.
-- [x] Add deterministic Linux-side unit tests for race distance, surface, and Coax/Whip behavior.
+- [x] Add deterministic Linux-side unit tests for race distance, surface, human Whip timing, and CPU late-race Whip behavior.
 - [ ] Verify a full 10-race session runs from title to final standings without corrupting state.
 - [ ] Verify all MVP features work with one controller.
 - [ ] Verify two-controller jockey support works when available.
@@ -287,11 +287,11 @@ Tasks:
 - [ ] Implement four race lanes with inside-lane advantage.
 - [ ] Implement lane changing for human jockeys.
 - [ ] Implement CPU lane behavior with rail preference and passing.
-- [ ] Implement integer-only pace simulation.
-- [ ] Apply distance, surface, and fatigue effects.
-- [ ] Implement Coax behavior.
-- [ ] Implement Whip behavior.
-- [ ] Implement late-race CPU whip usage.
+- [x] Implement integer-only pace simulation.
+- [x] Apply distance, surface, and fatigue effects.
+- [x] Implement Coax behavior.
+- [x] Implement Whip behavior.
+- [x] Implement late-race CPU whip usage.
 - [ ] Implement furlong markers and leader-based timing.
 - [x] Detect finish order and winning time.
 

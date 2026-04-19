@@ -39,7 +39,7 @@ static uint16_t finish_tick_for_horse(const struct RaceSimTraits *traits,
 
     while(state.distance_units < total_units) {
         uint8_t step = race_sim_step_distance(traits, surface, distance_furlongs,
-            &state, false, false, tick, 0u);
+            &state, true, false, false, tick, 0u);
         race_sim_advance_state(&state, step, total_units);
         tick++;
         assert(tick < 512u);
@@ -59,7 +59,7 @@ static struct RaceSimState simulate_steps(const struct RaceSimTraits *traits,
 
     for(uint8_t tick = 0u; tick < steps; tick++) {
         uint8_t step = race_sim_step_distance(traits, surface, distance_furlongs,
-            &state, coax, whip, tick, 0u);
+            &state, false, coax, whip, tick, 0u);
         race_sim_advance_state(&state, step, total_units);
     }
 
@@ -127,12 +127,53 @@ static void test_late_whip_beats_early_whip(void)
     late_state.distance_units = (uint16_t)((total_units * 3u) / 4u);
 
     early_step = race_sim_step_distance(&balanced, SURFACE_DRY, 10u,
-        &early_state, false, true, 0u, 0u);
+        &early_state, false, false, true, 0u, 0u);
     late_step = race_sim_step_distance(&balanced, SURFACE_DRY, 10u,
-        &late_state, false, true, 0u, 0u);
+        &late_state, false, false, true, 0u, 0u);
 
     assert(late_step >= early_step);
     assert(late_state.fatigue < early_state.fatigue);
+}
+
+static void test_cpu_saves_whip_for_late_race(void)
+{
+    struct RaceSimTraits balanced = make_traits(9u, 9u, 10u, 10u, 8u, 8u, 8u);
+    struct RaceSimState early_state;
+    struct RaceSimState late_state;
+    uint16_t total_units = race_sim_total_distance_units(10u);
+
+    race_sim_reset_state(&early_state);
+    race_sim_reset_state(&late_state);
+    early_state.distance_units = (uint16_t)(total_units / 4u);
+    late_state.distance_units = (uint16_t)((total_units * 3u) / 4u);
+
+    (void)race_sim_step_distance(&balanced, SURFACE_DRY, 10u,
+        &early_state, true, false, false, 0u, 0u);
+    (void)race_sim_step_distance(&balanced, SURFACE_DRY, 10u,
+        &late_state, true, false, false, 0u, 0u);
+
+    assert(early_state.cpu_whip_uses == 0u);
+    assert(early_state.whip_boost == 0u);
+    assert(late_state.cpu_whip_uses == 1u);
+    assert(late_state.whip_boost > 0u);
+}
+
+static void test_cpu_whip_has_limited_bursts(void)
+{
+    struct RaceSimTraits balanced = make_traits(9u, 9u, 10u, 10u, 8u, 8u, 8u);
+    struct RaceSimState state;
+    uint16_t total_units = race_sim_total_distance_units(10u);
+
+    race_sim_reset_state(&state);
+    state.distance_units = (uint16_t)((total_units * 3u) / 4u);
+
+    for(uint16_t tick = 0u; tick < 24u; tick++) {
+        uint8_t step = race_sim_step_distance(&balanced, SURFACE_DRY, 10u,
+            &state, true, false, false, tick, 0u);
+        race_sim_advance_state(&state, step, total_units);
+    }
+
+    assert(state.cpu_whip_uses <= 2u);
 }
 
 static void test_deterministic_results(void)
@@ -152,6 +193,8 @@ int main(void)
     test_surface_affinity_changes_outcome();
     test_coax_is_modest_and_costly();
     test_late_whip_beats_early_whip();
+    test_cpu_saves_whip_for_late_race();
+    test_cpu_whip_has_limited_bursts();
     test_deterministic_results();
 
     puts("race_sim tests passed");

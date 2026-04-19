@@ -1207,6 +1207,7 @@ static uint8_t race_step_distance(uint8_t entry_index)
         race->surface,
         race->distance_furlongs,
         &race_state[entry_index],
+        entry_index != race_controlled_entry,
         entry_index == race_controlled_entry && race_held[INPUT_Y],
         entry_index == race_controlled_entry && race_held[INPUT_B],
         race_tick,

@@ -58,8 +58,36 @@ void race_sim_reset_state(struct RaceSimState *state)
     state->fatigue = 0u;
     state->coax_boost = 0u;
     state->whip_boost = 0u;
+    state->cpu_whip_uses = 0u;
+    state->cpu_whip_cooldown = 0u;
     state->distance_units = 0u;
     state->progress = 0u;
+}
+
+static bool race_sim_should_cpu_whip(const struct RaceSimTraits *traits,
+    const struct RaceSimState *state, uint8_t distance_furlongs,
+    uint16_t random_value)
+{
+    uint16_t total_units = race_sim_total_distance_units(distance_furlongs);
+    uint8_t phase = race_sim_phase_index(state->distance_units, total_units);
+    uint8_t late_score;
+
+    if(phase < 2u || state->cpu_whip_uses >= 2u || state->cpu_whip_cooldown != 0u) {
+        return false;
+    }
+    if(state->whip_boost != 0u) {
+        return false;
+    }
+    if(state->fatigue >= (uint8_t)(traits->endurance + 18u)) {
+        return false;
+    }
+
+    late_score = (uint8_t)(traits->stretch_speed + (traits->endurance >> 1u));
+    if(phase >= 3u) {
+        return true;
+    }
+
+    return (uint8_t)(late_score + (random_value & 0x03u)) >= 13u;
 }
 
 void race_sim_advance_state(struct RaceSimState *state, uint8_t distance, uint16_t total_units)
@@ -82,7 +110,7 @@ void race_sim_advance_state(struct RaceSimState *state, uint8_t distance, uint16
 
 uint8_t race_sim_step_distance(const struct RaceSimTraits *traits,
     uint8_t surface, uint8_t distance_furlongs,
-    struct RaceSimState *state, bool coax, bool whip,
+    struct RaceSimState *state, bool cpu_controlled, bool coax, bool whip,
     uint16_t race_tick, uint16_t random_value)
 {
     uint16_t total_units;
@@ -90,6 +118,7 @@ uint8_t race_sim_step_distance(const struct RaceSimTraits *traits,
     uint8_t fatigue_gain;
     int16_t pace_score;
     uint8_t distance = 1u;
+    bool active_whip;
 
     if(traits == NULL || state == NULL) {
         return distance;
@@ -97,6 +126,19 @@ uint8_t race_sim_step_distance(const struct RaceSimTraits *traits,
 
     total_units = race_sim_total_distance_units(distance_furlongs);
     phase = race_sim_phase_index(state->distance_units, total_units);
+    active_whip = whip;
+
+    if(state->cpu_whip_cooldown > 0u) {
+        state->cpu_whip_cooldown--;
+    }
+
+    if(cpu_controlled && !coax && !whip) {
+        active_whip = race_sim_should_cpu_whip(traits, state, distance_furlongs, random_value);
+        if(active_whip) {
+            state->cpu_whip_uses++;
+            state->cpu_whip_cooldown = 8u;
+        }
+    }
 
     switch(phase) {
         case 0u:
@@ -145,7 +187,7 @@ uint8_t race_sim_step_distance(const struct RaceSimTraits *traits,
         state->coax_boost--;
     }
 
-    if(whip) {
+    if(active_whip) {
         state->whip_boost = (phase >= 2u) ? 5u : 3u;
         pace_score = (int16_t)(pace_score + state->whip_boost);
         pace_score = (phase >= 2u)
@@ -184,7 +226,7 @@ uint8_t race_sim_step_distance(const struct RaceSimTraits *traits,
     if(coax) {
         fatigue_gain++;
     }
-    if(whip) {
+    if(active_whip) {
         fatigue_gain = (phase >= 2u)
             ? (uint8_t)(fatigue_gain + 3u)
             : (uint8_t)(fatigue_gain + 6u);

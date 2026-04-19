@@ -20,6 +20,8 @@ struct RaceSimState
     uint8_t fatigue;
     uint8_t coax_boost;
     uint8_t whip_boost;
+    uint8_t cpu_whip_uses;
+    uint8_t cpu_whip_cooldown;
     uint16_t distance_units;
     uint8_t progress;
 };
@@ -30,7 +32,7 @@ void race_sim_reset_state(struct RaceSimState *state);
 void race_sim_advance_state(struct RaceSimState *state, uint8_t distance, uint16_t total_units);
 uint8_t race_sim_step_distance(const struct RaceSimTraits *traits,
     uint8_t surface, uint8_t distance_furlongs,
-    struct RaceSimState *state, bool coax, bool whip,
+    struct RaceSimState *state, bool cpu_controlled, bool coax, bool whip,
     uint16_t race_tick, uint16_t random_value);
 
 #endif
