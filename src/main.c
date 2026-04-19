@@ -371,7 +371,7 @@ void draw_char_opaque(uint16_t x, uint8_t y, uint8_t c, uint8_t fg, uint8_t bg)
     if(((x&15)<=8) && ((y&15)<=8)) {
         // use faster offset instead.
         uint16_t offset=((x>>4)<<8)+(y<<4)+(x&0x0F);
-
+#if 0
         for(uint8_t j=0;j<8;j++) {
             uint8_t mask=0x80;
             uint8_t pat=ptr[j]; // get the pixel pattern
@@ -385,6 +385,9 @@ void draw_char_opaque(uint16_t x, uint8_t y, uint8_t c, uint8_t fg, uint8_t bg)
             }
             offset+=8; // 8 to move to the next line
         }
+#else
+        draw_text_char_opaque_aligned(ptr, &text_tiles[offset], fg, bg);
+#endif
         return;
     }
             
