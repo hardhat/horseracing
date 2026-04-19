@@ -180,6 +180,9 @@ Build these in order. Later steps should not start until their prerequisites are
 
 ### Testing
 
+- [x] Extract the race simulation into a host-testable module.
+- [x] Add a separate Linux test Makefile delegated from the main Makefile.
+- [x] Add deterministic Linux-side unit tests for race distance, surface, and Coax/Whip behavior.
 - [ ] Verify a full 10-race session runs from title to final standings without corrupting state.
 - [ ] Verify all MVP features work with one controller.
 - [ ] Verify two-controller jockey support works when available.
@@ -191,8 +194,8 @@ Build these in order. Later steps should not start until their prerequisites are
 - [ ] Verify odds update correctly as bets are placed and Win payouts use locked odds.
 - [ ] Verify horse traits remain persistent across the entire 10-race session.
 - [ ] Verify only the last 3 race records are shown per horse.
-- [ ] Verify dry, muddy, and turf conditions all affect race outcomes.
-- [ ] Verify distance groups affect pace and fatigue.
+- [x] Verify dry, muddy, and turf conditions all affect race outcomes.
+- [x] Verify distance groups affect pace and fatigue.
 - [ ] Verify lane changes, rail preference, Coax, and Whip all affect race outcomes.
 - [ ] Verify finish order and winning time are correct.
 - [ ] Verify payouts and bankroll updates are correct after every race.
