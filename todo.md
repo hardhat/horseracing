@@ -88,7 +88,7 @@ Build these in order. Later steps should not start until their prerequisites are
 - [x] Implement SNES controller input handling for menus and races.
 - [x] Build the boot flow from title screen to new 10-race program.
 - [x] Implement player setup for 1 to 6 bettors.
-- [ ] Implement jockey setup for 0, 1, or 2 human riders.
+- [ ] Implement jockey setup for 0 or 1 human riders.
 
 #### Step 2: Session Initialization
 
@@ -120,7 +120,6 @@ Build these in order. Later steps should not start until their prerequisites are
 - [x] Implement jockey assignment before each race.
 - [x] Support all-CPU races.
 - [x] Support one human-controlled outside horse.
-- [ ] Support two human-controlled outside horses when two controllers are present.
 - [x] Implement the starting gate sequence.
 
 #### Step 6: Core Race Simulation
@@ -213,7 +212,7 @@ Tasks:
 
 - [x] Build boot flow from title screen to a new session.
 - [x] Implement player setup for 1 to 6 bettors.
-- [ ] Implement jockey setup for 0, 1, or 2 human riders.
+- [ ] Implement jockey setup for 0 or 1 human riders.
 - [x] Implement SNES controller input handling for menus and races.
 - [x] Define compact data structures for bettors, horses, race programs, wagers, and results.
 - [x] Implement session reset and new-game initialization.
