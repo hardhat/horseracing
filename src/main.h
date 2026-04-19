@@ -231,6 +231,16 @@ void render_tilemap_xy1(uint8_t x, uint8_t y);
 /// @param label pointer to an array of tile ids from the tileset to draw, which must be in the tileset.
 /// @param len number of tiles to draw in the array, which must be less than or
 void render_tilemap_label1(uint8_t x, uint8_t y, const char *label, uint8_t len);
+/// @brief Set pixel scroll offsets for one tilemap layer.
+/// @param layer layer index, currently 0 or 1.
+/// @param x horizontal pixel scroll.
+/// @param y vertical pixel scroll.
+void set_layer_scroll(uint8_t layer, uint16_t x, uint16_t y);
+/// @brief Reset one tilemap layer's scroll to 0,0.
+/// @param layer layer index, currently 0 or 1.
+void reset_layer_scroll(uint8_t layer);
+/// @brief Reset both visible tilemap layers to 0,0 scroll.
+void reset_layer_scrolls(void);
 /// @brief Clear the off screen sprite buffer to be rendered later.  Fully zeros the buffer, and sets the current count to 0.
 void reset_sprite(void);
 /// @brief Adds a sprite to the sprite buffer to be rendered later.

@@ -480,6 +480,40 @@ void render_tilemap_label1(uint8_t x, uint8_t y, const char *label, uint8_t len)
     gfx_tilemap_load(&ctx, label, len, 1, x, y);
 }
 
+void set_layer_scroll(uint8_t layer, uint16_t x, uint16_t y)
+{
+    switch(layer)
+    {
+        case 0u:
+            zvb_ctrl_l0_scr_x_low = (uint8_t)(x & 0x00FFu);
+            zvb_ctrl_l0_scr_x_high = (uint8_t)(x >> 8);
+            zvb_ctrl_l0_scr_y_low = (uint8_t)(y & 0x00FFu);
+            zvb_ctrl_l0_scr_y_high = (uint8_t)(y >> 8);
+            break;
+
+        case 1u:
+            zvb_ctrl_l1_scr_x_low = (uint8_t)(x & 0x00FFu);
+            zvb_ctrl_l1_scr_x_high = (uint8_t)(x >> 8);
+            zvb_ctrl_l1_scr_y_low = (uint8_t)(y & 0x00FFu);
+            zvb_ctrl_l1_scr_y_high = (uint8_t)(y >> 8);
+            break;
+
+        default:
+            break;
+    }
+}
+
+void reset_layer_scroll(uint8_t layer)
+{
+    set_layer_scroll(layer, 0u, 0u);
+}
+
+void reset_layer_scrolls(void)
+{
+    reset_layer_scroll(0u);
+    reset_layer_scroll(1u);
+}
+
 void reset_sprite(void)
 {
     last_sprite_count = sprite_count;

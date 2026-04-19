@@ -46,16 +46,16 @@ The MVP is the smallest version that delivers the complete original game loop:
 - [x] Implement the starting gate sequence.
 - [x] Implement a side-view race screen with four horses visible.
 - [ ] Implement horizontal race progression with independent foreground and background scrolling.
-- [ ] Implement four race lanes with inside-lane advantage.
-- [ ] Implement lane changing for human jockeys.
-- [ ] Implement CPU lane behavior that prefers the rail and moves out to pass.
+- [x] Implement four race lanes with inside-lane advantage.
+- [x] Implement lane changing for human jockeys.
+- [x] Implement CPU lane behavior that prefers the rail and moves out to pass.
 - [x] Implement horse pace simulation using only integer arithmetic.
 - [x] Apply distance and surface effects to horse performance.
 - [x] Apply fatigue over race duration.
 - [x] Implement Coax input with a modest temporary speed boost.
 - [x] Implement Whip input with a strong temporary boost and heavy endurance cost.
 - [x] Implement late-race CPU whip behavior.
-- [ ] Add visible furlong markers.
+- [x] Add visible furlong markers.
 - [ ] Trigger a cue as the leader approaches each furlong marker.
 - [x] Detect finish order for all 4 horses.
 - [x] Display winning time.
@@ -125,15 +125,15 @@ Build these in order. Later steps should not start until their prerequisites are
 #### Step 6: Core Race Simulation
 
 - [x] Implement the side-view race simulation.
-- [ ] Implement four race lanes and inside-lane path advantage.
+- [x] Implement four race lanes and inside-lane path advantage.
 - [x] Implement integer-only pace simulation.
 - [x] Apply distance, surface, and fatigue effects during the race.
-- [ ] Implement lane changing for human jockeys.
-- [ ] Implement CPU lane choice with rail preference and passing behavior.
+- [x] Implement lane changing for human jockeys.
+- [x] Implement CPU lane choice with rail preference and passing behavior.
 - [x] Implement Coax behavior.
 - [x] Implement Whip behavior.
 - [x] Implement late-race CPU whip usage.
-- [ ] Implement furlong marker state and leader-based timing.
+- [x] Implement furlong marker state and leader-based timing.
 - [x] Detect finish order and winning time.
 
 #### Step 7: Race Presentation Integration
@@ -284,15 +284,15 @@ Tasks:
 - [x] Implement the starting gate sequence.
 - [x] Implement side-view race simulation for 4 horses.
 - [ ] Implement foreground and background scrolling.
-- [ ] Implement four race lanes with inside-lane advantage.
-- [ ] Implement lane changing for human jockeys.
-- [ ] Implement CPU lane behavior with rail preference and passing.
+- [x] Implement four race lanes with inside-lane advantage.
+- [x] Implement lane changing for human jockeys.
+- [x] Implement CPU lane behavior with rail preference and passing.
 - [x] Implement integer-only pace simulation.
 - [x] Apply distance, surface, and fatigue effects.
 - [x] Implement Coax behavior.
 - [x] Implement Whip behavior.
 - [x] Implement late-race CPU whip usage.
-- [ ] Implement furlong markers and leader-based timing.
+- [x] Implement furlong markers and leader-based timing.
 - [x] Detect finish order and winning time.
 
 Completion gate:
