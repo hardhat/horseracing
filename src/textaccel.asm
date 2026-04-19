@@ -80,9 +80,9 @@ _draw_text_char_opaque_aligned::
     push ix
     ld ix,#0
     add ix,sp
-    ld a,5(ix)
+    ld a,4(ix)
     ld (_dtcoa_next$-1),A ; self-modifying code 
-    ld c,4(ix)
+    ld c,5(ix)
 
     ex de,hl
     ld b,#8
