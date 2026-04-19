@@ -6,7 +6,7 @@ These are the next implementation targets with the best gameplay payoff and the 
 
 - [x] Capture per-horse past performances after each race and roll history to the last 3 runs.
 - [x] Add a past-performance view during betting with `Y` toggle and `L/R` browsing.
-- [ ] Update displayed odds as wagers are confirmed and store locked Win odds for payout settlement.
+- [x] Update displayed odds as wagers are confirmed and store locked Win odds for payout settlement.
 
 ## MVP
 
@@ -34,7 +34,7 @@ The MVP is the smallest version that delivers the complete original game loop:
 - [x] Implement Exacta bets.
 - [x] Lock in wagers and deduct bankroll immediately on confirmation.
 - [x] Implement tentative odds display for the current race.
-- [ ] Adjust displayed odds as wagers are placed and lock Win payout odds at confirmation.
+- [x] Adjust displayed odds as wagers are placed and lock Win payout odds at confirmation.
 - [x] Implement the past performance screen.
 - [x] Store and display up to the last 3 runs per horse.
 - [x] Show enough past data to compare distance, surface, time, and finish summary.
@@ -104,7 +104,7 @@ Build these in order. Later steps should not start until their prerequisites are
 - [x] Implement the betting sheet logic.
 - [x] Implement turn-based pass-and-play wager entry.
 - [x] Implement tentative odds generation and display.
-- [ ] Update displayed odds as bets are placed and lock Win payout odds at confirmation.
+- [x] Update displayed odds as bets are placed and lock Win payout odds at confirmation.
 - [x] Implement Win bet entry and validation.
 - [x] Implement Exacta bet entry and validation.
 - [x] Deduct bankroll immediately when a wager is confirmed.
@@ -189,7 +189,7 @@ Build these in order. Later steps should not start until their prerequisites are
 - [ ] Verify busted bettors are visibly marked as out of the game.
 - [ ] Verify only the 4 current entrants can be selected for Win and Exacta bets.
 - [ ] Verify Exacta order matters and pays correctly at 15:1.
-- [ ] Verify odds update correctly as bets are placed.
+- [ ] Verify odds update correctly as bets are placed and Win payouts use locked odds.
 - [ ] Verify horse traits remain persistent across the entire 10-race session.
 - [ ] Verify only the last 3 race records are shown per horse.
 - [ ] Verify dry, muddy, and turf conditions all affect race outcomes.
@@ -245,7 +245,7 @@ Tasks:
 - [x] Implement Exacta bets.
 - [x] Deduct bankroll immediately when a wager is confirmed.
 - [x] Implement tentative odds generation and display.
-- [ ] Update displayed odds as wagers are placed and lock Win payout odds at confirmation.
+- [x] Update displayed odds as wagers are placed and lock Win payout odds at confirmation.
 
 Completion gate:
 

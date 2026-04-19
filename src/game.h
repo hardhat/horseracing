@@ -97,6 +97,7 @@ struct Wager
     uint8_t type;
     uint8_t first_pick;
     uint8_t second_pick;
+    uint8_t locked_win_odds;
     uint8_t confirmed;
 };
 

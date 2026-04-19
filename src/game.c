@@ -169,6 +169,8 @@ static void draw_bet_entry(uint8_t icon_tile, uint8_t marker_tile, uint8_t map_y
     text_draw_strip_alloc(4, map_y, text, COL_WHITE, COL_BLACK, 4, false);
 }
 
+static void assign_race_odds(struct RaceCard *race);
+
 static uint8_t selected_row_y(void)
 {
     switch(game.session.selected_field) {
@@ -186,7 +188,9 @@ static void clear_confirmed_wager(struct Bettor *bettor, struct Wager *wager)
 {
     if(wager->confirmed) {
         bettor->bankroll = (uint16_t)(bettor->bankroll + wager->amount);
+        wager->locked_win_odds = 0u;
         wager->confirmed = 0;
+        assign_race_odds(&game.session.races[game.session.current_race]);
     }
 }
 
@@ -205,6 +209,7 @@ static void reset_wager(struct Wager *wager)
     wager->type = BET_TYPE_WIN;
     wager->first_pick = 0u;
     wager->second_pick = 1u;
+    wager->locked_win_odds = 0u;
     wager->confirmed = 0u;
 }
 
@@ -411,14 +416,42 @@ static void choose_race_entries(struct RaceCard *race)
 
 static void assign_race_odds(struct RaceCard *race)
 {
-    static const uint8_t odds_by_rank[4] = { 3u, 4u, 5u, 6u };
+    static const uint8_t tentative_odds_by_rank[4] = { 3u, 4u, 5u, 6u };
+    static const uint8_t live_odds_by_rank[4] = { 2u, 3u, 5u, 7u };
     uint8_t order[4] = { 0u, 1u, 2u, 3u };
     uint16_t score[4];
+    uint16_t support[4] = { 0u, 0u, 0u, 0u };
+    uint8_t active_race = (race == &game.session.races[game.session.current_race]) ? 1u : 0u;
+    uint8_t any_confirmed = 0u;
 
     for(uint8_t i = 0; i < 4u; i++) {
         score[i] = projected_horse_score(&game.session.stable[race->entries[i].horse_index],
             race->surface,
             race->distance_furlongs);
+    }
+
+    if(active_race != 0u) {
+        for(uint8_t i = 0; i < game.session.bettor_count; i++) {
+            const struct Wager *wager = &game.session.wagers[i];
+
+            if(wager->confirmed == 0u || wager->type == BET_TYPE_NONE) {
+                continue;
+            }
+
+            any_confirmed = 1u;
+            if(wager->type == BET_TYPE_WIN) {
+                support[wager->first_pick] = (uint16_t)(support[wager->first_pick] + wager->amount * 2u);
+            } else if(wager->type == BET_TYPE_EXACTA) {
+                support[wager->first_pick] = (uint16_t)(support[wager->first_pick] + wager->amount);
+                support[wager->second_pick] = (uint16_t)(support[wager->second_pick] + wager->amount);
+            }
+        }
+
+        if(any_confirmed != 0u) {
+            for(uint8_t i = 0; i < 4u; i++) {
+                score[i] = (uint16_t)(score[i] + support[i]);
+            }
+        }
     }
 
     for(uint8_t i = 0; i < 3u; i++) {
@@ -437,7 +470,9 @@ static void assign_race_odds(struct RaceCard *race)
     }
 
     for(uint8_t i = 0; i < 4u; i++) {
-        race->entries[order[i]].odds = odds_by_rank[i];
+        race->entries[order[i]].odds = (any_confirmed != 0u)
+            ? live_odds_by_rank[i]
+            : tentative_odds_by_rank[i];
     }
 }
 
@@ -531,6 +566,7 @@ static void commit_wager(struct Bettor *bettor, struct Wager *wager)
 
     if(wager->type == BET_TYPE_NONE) {
         wager->amount = 0u;
+        wager->locked_win_odds = 0u;
         wager->confirmed = 1u;
         return;
     }
@@ -545,8 +581,15 @@ static void commit_wager(struct Bettor *bettor, struct Wager *wager)
         wager->amount = max_amount;
     }
 
+    if(wager->type == BET_TYPE_WIN) {
+        wager->locked_win_odds = game.session.races[game.session.current_race].entries[wager->first_pick].odds;
+    } else {
+        wager->locked_win_odds = 0u;
+    }
+
     bettor->bankroll = (uint16_t)(bettor->bankroll - wager->amount);
     wager->confirmed = 1u;
+    assign_race_odds(&game.session.races[game.session.current_race]);
 }
 
 static bool bettor_can_wager(uint8_t bettor_index)
@@ -827,6 +870,37 @@ static void prepare_next_race(void)
     init_betting_turn();
 }
 
+static void clear_current_race_wagers(void)
+{
+    for(uint8_t i = 0; i < game.session.bettor_count; i++) {
+        clear_confirmed_wager(&game.session.bettors[i], &game.session.wagers[i]);
+        reset_wager(&game.session.wagers[i]);
+        game.session.wagers[i].bettor_index = i;
+    }
+
+    assign_race_odds(&game.session.races[game.session.current_race]);
+}
+
+static void skip_ahead_races(uint8_t count)
+{
+    uint8_t target_race;
+
+    if(game.session.current_race >= 9u || count == 0u) {
+        return;
+    }
+
+    clear_current_race_wagers();
+
+    target_race = (uint8_t)(game.session.current_race + count);
+    if(target_race > 9u) {
+        target_race = 9u;
+    }
+
+    game.session.current_race = target_race;
+    prepare_next_race();
+    resume_game();
+}
+
 static uint16_t wager_payout(const struct Wager *wager, const struct RaceCard *race)
 {
     if(wager->confirmed == 0u || wager->type == BET_TYPE_NONE) {
@@ -837,7 +911,7 @@ static uint16_t wager_payout(const struct Wager *wager, const struct RaceCard *r
         uint8_t winner = race->result.finish_order[0];
 
         if(wager->first_pick == winner) {
-            return (uint16_t)(wager->amount * (uint16_t)(race->entries[winner].odds + 1u));
+            return (uint16_t)(wager->amount * (uint16_t)(wager->locked_win_odds + 1u));
         }
         return 0u;
     }
@@ -1606,6 +1680,10 @@ void input_game(uint8_t key, bool down)
             break;
         }
 
+        case INPUT_R:
+            skip_ahead_races(8u);
+            break;
+
         case INPUT_Y:
             open_past_performance_view();
             resume_game();
@@ -1709,6 +1787,10 @@ void input_gameover(uint8_t key, bool down)
 
 void update_gameover(void)
 {
+    if(race_show_standings != 0u) {
+        return;
+    }
+
     if(race_show_results != 0u) {
         if(race_result_timer > 0u) {
             race_result_timer--;
