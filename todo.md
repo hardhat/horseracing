@@ -4,9 +4,9 @@
 
 These are the next implementation targets with the best gameplay payoff and the fewest prerequisite gaps.
 
-- [x] Capture per-horse past performances after each race and roll history to the last 3 runs.
-- [x] Add a past-performance view during betting with `Y` toggle and `L/R` browsing.
-- [x] Update displayed odds as wagers are confirmed and store locked Win odds for payout settlement.
+- [x] Implement integer-only pace simulation using horse traits, race distance, surface, and fatigue.
+- [ ] Make Coax and Whip materially affect race outcomes for the human-controlled outside horse.
+- [ ] Surface busted bettors as out of the game in the betting, results, and standings UI.
 
 ## MVP
 
@@ -14,7 +14,7 @@ The MVP is the smallest version that delivers the complete original game loop:
 
 - [x] Boot to a title screen and start a new 10-race program.
 - [x] Implement player setup for 1 to 6 bettors.
-- [ ] Implement setup for 0, 1, or 2 human jockeys.
+- [ ] Implement setup for 0 or 1 human jockeys in the one-controller build.
 - [x] Detect and read SNES controller input needed for menus and racing.
 - [x] Define compact data structures for bettors, horses, race entries, and race results.
 - [x] Implement generation of 8 persistent horses at the start of a new session.
@@ -49,9 +49,9 @@ The MVP is the smallest version that delivers the complete original game loop:
 - [ ] Implement four race lanes with inside-lane advantage.
 - [ ] Implement lane changing for human jockeys.
 - [ ] Implement CPU lane behavior that prefers the rail and moves out to pass.
-- [ ] Implement horse pace simulation using only integer arithmetic.
-- [ ] Apply distance and surface effects to horse performance.
-- [ ] Apply fatigue over race duration.
+- [x] Implement horse pace simulation using only integer arithmetic.
+- [x] Apply distance and surface effects to horse performance.
+- [x] Apply fatigue over race duration.
 - [ ] Implement Coax input with a modest temporary speed boost.
 - [ ] Implement Whip input with a strong temporary boost and heavy endurance cost.
 - [ ] Implement late-race CPU whip behavior.
@@ -126,8 +126,8 @@ Build these in order. Later steps should not start until their prerequisites are
 
 - [x] Implement the side-view race simulation.
 - [ ] Implement four race lanes and inside-lane path advantage.
-- [ ] Implement integer-only pace simulation.
-- [ ] Apply distance, surface, and fatigue effects during the race.
+- [x] Implement integer-only pace simulation.
+- [x] Apply distance, surface, and fatigue effects during the race.
 - [ ] Implement lane changing for human jockeys.
 - [ ] Implement CPU lane choice with rail preference and passing behavior.
 - [ ] Implement Coax behavior.
@@ -259,7 +259,7 @@ Support the original handicapping loop by capturing and displaying prior races.
 
 Tasks:
 
-- [ ] Implement race result records per horse.
+- [x] Implement race result records per horse.
 - [x] Store up to the last 3 runs per horse.
 - [x] Implement the past performance screen.
 - [x] Show distance, surface, time, and finish summary for prior runs.
@@ -267,9 +267,9 @@ Tasks:
 
 Completion gate:
 
-- [ ] After completed races, each horse carries forward usable past-performance data.
-- [ ] The betting phase can display only the last 3 runs per horse.
-- [ ] Players can compare entrants before wagering without leaving the betting flow.
+- [x] After completed races, each horse carries forward usable past-performance data.
+- [x] The betting phase can display only the last 3 runs per horse.
+- [x] Players can compare entrants before wagering without leaving the betting flow.
 
 ### Milestone 4: Live Race Prototype
 
@@ -309,7 +309,6 @@ Tasks:
 - [x] Implement jockey assignment before each race.
 - [x] Support all-CPU races.
 - [x] Support one human-controlled outside horse.
-- [ ] Support two human-controlled outside horses when two controllers are present.
 - [x] Display tote-board-style race results.
 - [x] Settle Win and Exacta payouts.
 - [x] Update bettor bankrolls after each race.

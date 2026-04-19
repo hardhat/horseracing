@@ -11,6 +11,7 @@
 #define TEXT_TILE_ARENA_LIMIT ((uint8_t)0xFFu)
 #define BETTING_SUMMARY_SPAN  ((uint8_t)10u)
 #define BETTING_WAGER_SPAN    ((uint8_t)12u)
+#define RACE_DISTANCE_SCALE   ((uint16_t)8u)
 
 struct Game game;
 
@@ -18,6 +19,8 @@ static bool held[MAX_INPUT];
 static uint16_t session_rng = 0x43E7u;
 static bool race_held[MAX_INPUT];
 static uint8_t race_progress[4];
+static uint8_t race_fatigue[4];
+static uint16_t race_distance_units[4];
 static uint8_t race_finish_order[4];
 static uint8_t race_finish_count;
 static uint8_t race_controlled_entry;
@@ -1171,20 +1174,68 @@ static void render_past_performance_rows(void)
     }
 }
 
+static uint16_t race_total_distance_units(void)
+{
+    return (uint16_t)(game.session.races[game.session.current_race].distance_furlongs * RACE_DISTANCE_SCALE);
+}
+
+static uint8_t race_display_progress(uint16_t covered_units, uint16_t total_units)
+{
+    uint16_t scaled;
+
+    if(total_units == 0u) {
+        return 0u;
+    }
+
+    scaled = (uint16_t)((covered_units * 16u) / total_units);
+    if(scaled > 16u) {
+        scaled = 16u;
+    }
+    return (uint8_t)scaled;
+}
+
+static uint8_t race_phase_index(uint16_t covered_units, uint16_t total_units)
+{
+    uint16_t quarter;
+
+    if(total_units == 0u) {
+        return 0u;
+    }
+
+    quarter = (uint16_t)(total_units >> 2);
+    if(quarter == 0u) {
+        quarter = 1u;
+    }
+
+    if(covered_units < quarter) {
+        return 0u;
+    }
+    if(covered_units < (uint16_t)(quarter * 2u)) {
+        return 1u;
+    }
+    if(covered_units < (uint16_t)(quarter * 3u)) {
+        return 2u;
+    }
+    return 3u;
+}
+
 static void advance_race_entry(uint8_t entry_index, uint8_t distance)
 {
-    uint8_t max_progress = 16u;
+    uint16_t total_units = race_total_distance_units();
 
-    if(race_progress[entry_index] >= max_progress) {
+    if(race_distance_units[entry_index] >= total_units) {
         return;
     }
 
-    while(distance-- != 0u && race_progress[entry_index] < max_progress) {
-        race_progress[entry_index]++;
+    while(distance-- != 0u && race_distance_units[entry_index] < total_units) {
+        race_distance_units[entry_index]++;
     }
 
-    if(race_progress[entry_index] >= max_progress) {
-        race_progress[entry_index] = max_progress;
+    race_progress[entry_index] = race_display_progress(race_distance_units[entry_index], total_units);
+
+    if(race_distance_units[entry_index] >= total_units) {
+        race_distance_units[entry_index] = total_units;
+        race_progress[entry_index] = 16u;
         race_finish_order[race_finish_count] = entry_index;
         race_finish_count++;
     }
@@ -1193,21 +1244,87 @@ static void advance_race_entry(uint8_t entry_index, uint8_t distance)
 static uint8_t race_step_distance(uint8_t entry_index)
 {
     struct RaceCard *race = &game.session.races[game.session.current_race];
-    struct RaceEntry *entry = &race->entries[entry_index];
+    struct Horse *horse = &game.session.stable[race->entries[entry_index].horse_index];
+    uint16_t total_units = race_total_distance_units();
+    uint16_t covered_units = race_distance_units[entry_index];
+    uint8_t phase = race_phase_index(covered_units, total_units);
+    uint8_t endurance = horse->traits.endurance;
+    uint8_t fatigue_gain;
+    int16_t pace_score;
     uint8_t distance = 1u;
 
-    if(entry->odds <= 4u && (race_tick & 0x01u) == 0u) {
-        distance++;
+    switch(phase) {
+        case 0u:
+            pace_score = (int16_t)(horse->traits.break_speed * 2u + horse->traits.early_pace + endurance);
+            break;
+
+        case 1u:
+            pace_score = (int16_t)(horse->traits.early_pace * 2u + endurance + horse->traits.stretch_speed);
+            break;
+
+        case 2u:
+            pace_score = (int16_t)(horse->traits.early_pace + endurance * 2u + horse->traits.stretch_speed);
+            break;
+
+        default:
+            pace_score = (int16_t)(endurance + horse->traits.stretch_speed * 2u);
+            break;
     }
+
+    if(race->distance_furlongs <= 4u) {
+        pace_score = (int16_t)(pace_score + horse->traits.break_speed + (horse->traits.early_pace >> 1));
+    } else if(race->distance_furlongs >= 8u) {
+        pace_score = (int16_t)(pace_score + endurance + horse->traits.stretch_speed - (horse->traits.break_speed >> 1));
+    }
+
+    pace_score = (int16_t)(pace_score + horse->traits.surface_affinity[race->surface] - 8);
+    pace_score = (int16_t)(pace_score - race_fatigue[entry_index]);
+    pace_score = (int16_t)(pace_score + (int16_t)(next_random_u16() & 0x03u));
 
     if(entry_index == race_controlled_entry) {
         if(race_held[INPUT_Y]) {
-            distance++;
+            pace_score = (int16_t)(pace_score + 2);
         }
         if(race_held[INPUT_B]) {
-            distance = (uint8_t)(distance + 2u);
+            pace_score = (int16_t)(pace_score + 4);
         }
     }
+
+    if(pace_score >= 26) {
+        distance++;
+    }
+    if(pace_score >= 34) {
+        distance++;
+    }
+    if(pace_score >= 42) {
+        distance++;
+    }
+
+    fatigue_gain = (uint8_t)(1u + distance);
+    if(race->distance_furlongs >= 7u) {
+        fatigue_gain++;
+    }
+    if(race->surface == SURFACE_MUDDY) {
+        fatigue_gain = (uint8_t)(fatigue_gain + 2u);
+    }
+    if(phase == 0u && fatigue_gain > 1u) {
+        fatigue_gain--;
+    }
+    if(endurance >= 10u && fatigue_gain > 1u) {
+        fatigue_gain--;
+    }
+    if(entry_index == race_controlled_entry) {
+        if(race_held[INPUT_Y]) {
+            fatigue_gain++;
+        }
+        if(race_held[INPUT_B]) {
+            fatigue_gain = (uint8_t)(fatigue_gain + 3u);
+        }
+    }
+    if((race_tick & 0x0Fu) == 0u && race_fatigue[entry_index] > 0u) {
+        race_fatigue[entry_index]--;
+    }
+    race_fatigue[entry_index] = (uint8_t)(race_fatigue[entry_index] + fatigue_gain);
 
     return distance;
 }
@@ -1723,6 +1840,8 @@ void init_gameover(void)
     text_reset_arena(TEXT_TILE_ARENA_BASE, TEXT_TILE_ARENA_LIMIT);
     memset(race_held, 0, sizeof(race_held));
     memset(race_progress, 0, sizeof(race_progress));
+    memset(race_fatigue, 0, sizeof(race_fatigue));
+    memset(race_distance_units, 0, sizeof(race_distance_units));
     memset(race_finish_order, 0xFF, sizeof(race_finish_order));
     race_finish_count = 0u;
     race_controlled_entry = controlled_race_entry();
