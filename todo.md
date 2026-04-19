@@ -6,7 +6,7 @@ These are the next implementation targets with the best gameplay payoff and the 
 
 - [x] Implement integer-only pace simulation using horse traits, race distance, surface, and fatigue.
 - [x] Make Coax and Whip materially affect race outcomes for the human-controlled outside horse.
-- [ ] Surface busted bettors as out of the game in the betting, results, and standings UI.
+- [x] Surface busted bettors as out of the game in the betting, results, and standings UI.
 
 ## MVP
 
@@ -26,7 +26,7 @@ The MVP is the smallest version that delivers the complete original game loop:
 - [x] Implement bettor bankrolls with a $750 starting value.
 - [x] Enforce the $250 maximum wager or current bankroll, whichever is lower.
 - [x] Prevent busted bettors from placing further bets.
-- [ ] Show busted bettors as out of the game in the UI.
+- [x] Show busted bettors as out of the game in the UI.
 - [x] Implement the betting sheet screen.
 - [x] Show race number, entrants, odds, distance, surface, and bettor bankrolls on the betting sheet.
 - [x] Implement turn-based pass-and-play betting entry.
@@ -97,7 +97,7 @@ Build these in order. Later steps should not start until their prerequisites are
 - [x] Generate a 10-race program with entrants, distance, and surface.
 - [x] Implement bankroll tracking with $750 starting stake and $250 max wager cap.
 - [x] Prevent busted bettors from wagering in later rounds.
-- [ ] Surface busted-bettor status in the UI.
+- [x] Surface busted-bettor status in the UI.
 
 #### Step 3: Betting Phase
 
@@ -239,7 +239,7 @@ Tasks:
 - [x] Implement bankroll tracking with $750 starting stake.
 - [x] Enforce the $250 max wager cap.
 - [x] Prevent busted bettors from placing further bets.
-- [ ] Show busted bettors as out of the game in the UI.
+- [x] Show busted bettors as out of the game in the UI.
 - [x] Implement the betting sheet logic.
 - [x] Show race number, entrants, odds, distance, surface, and bettor bankrolls.
 - [x] Implement pass-and-play wager entry.

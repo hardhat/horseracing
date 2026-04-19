@@ -96,6 +96,24 @@ static void copy_padded_text(char *buffer, uint8_t width, const char *value)
     buffer[width] = '\0';
 }
 
+static bool bettor_is_busted(uint8_t bettor_index)
+{
+    return bettor_index < game.session.bettor_count
+        && game.session.bettors[bettor_index].bankroll == 0u;
+}
+
+static void format_bettor_status(char *buffer, uint8_t bettor_index)
+{
+    if(bettor_is_busted(bettor_index)) {
+        sprintf(buffer, "B%u OUT", (unsigned)(bettor_index + 1u));
+        return;
+    }
+
+    sprintf(buffer, "B%u $%u",
+        (unsigned)(bettor_index + 1u),
+        (unsigned)game.session.bettors[bettor_index].bankroll);
+}
+
 static uint16_t next_random_u16(void)
 {
     session_rng = (uint16_t)(session_rng * 25173u + 13849u);
@@ -998,6 +1016,7 @@ static void render_race_results_screen(void)
 {
     struct RaceCard *race = &game.session.races[game.session.current_race];
     char line[20];
+    char status_line[12];
 
     fill_tilemap(TILE_COLOR_BLACK, 0, 0, TILES_ACROSS, TILES_DOWN);
     render_tilemap(1);
@@ -1015,7 +1034,19 @@ static void render_race_results_screen(void)
         struct Horse *horse = &game.session.stable[race->entries[entry_index].horse_index];
 
         sprintf(line, "%u %s", (unsigned)(i + 1u), horse_color_name[horse->color]);
-        text_draw_strip_alloc(4, (uint8_t)(5u + i * 2u), line, COL_WHITE, COL_BLACK, 4, false);
+        text_draw_strip_alloc(4, (uint8_t)(5u + i), line, COL_WHITE, COL_BLACK, 4, false);
+    }
+
+    text_draw_strip_alloc(7, 9, "BETTORS", COL_LIGHT_GRAY, COL_BLACK, 4, false);
+
+    for(uint8_t i = 0; i < game.session.bettor_count; i++) {
+        uint8_t x = (i & 1u) == 0u ? 2u : 11u;
+        uint8_t y = (uint8_t)(10u + (i >> 1u));
+
+        format_bettor_status(status_line, i);
+        text_draw_strip_alloc(x, y, status_line,
+            bettor_is_busted(i) ? COL_RED : COL_WHITE,
+            COL_BLACK, 4, false);
     }
 
     text_draw_pair_alloc(2, 13,
@@ -1029,6 +1060,7 @@ static void render_race_results_screen(void)
 static void render_final_standings_screen(void)
 {
     char line[20];
+    char status_line[12];
     uint8_t winner_index;
 
     fill_tilemap(TILE_COLOR_BLACK, 0, 0, TILES_ACROSS, TILES_DOWN);
@@ -1042,19 +1074,18 @@ static void render_final_standings_screen(void)
     text_draw_strip_alloc(2, 1, "FINAL STANDINGS", COL_WHITE, COL_BLACK, 4, false);
     set_font(FONT_NICETY);
 
-    sprintf(line, "WINNER B%u $%u",
-        (unsigned)(winner_index + 1u),
-        (unsigned)game.session.bettors[winner_index].bankroll);
+    format_bettor_status(status_line, winner_index);
+    sprintf(line, "WIN %s", status_line);
     text_draw_strip_alloc(3, 3, line, COL_YELLOW, COL_BLACK, 4, false);
 
     for(uint8_t i = 0; i < game.session.bettor_count; i++) {
         uint8_t bettor_index = standings_order[i];
 
-        sprintf(line, "%u B%u $%u",
-            (unsigned)(i + 1u),
-            (unsigned)(bettor_index + 1u),
-            (unsigned)game.session.bettors[bettor_index].bankroll);
-        text_draw_strip_alloc(4, (uint8_t)(4u + i), line, COL_WHITE, COL_BLACK, 4, false);
+        format_bettor_status(status_line, bettor_index);
+        sprintf(line, "%u %s", (unsigned)(i + 1u), status_line);
+        text_draw_strip_alloc(4, (uint8_t)(4u + i), line,
+            bettor_is_busted(bettor_index) ? COL_RED : COL_WHITE,
+            COL_BLACK, 4, false);
     }
 
     text_draw_pair_alloc(3, 12,
@@ -1223,10 +1254,11 @@ static void refresh_betting_text_blocks(void)
     char summary_line[32];
     char amount_value[8];
     char horse_value[12];
-    const char *help_top;
-    const char *help_bottom;
-    const char *state_label;
+    const char *help_top = "";
+    const char *help_bottom = "";
+    const char *state_label = "EDIT";
     const char *horse_label = "HORSE";
+    bool bettor_busted = bettor_is_busted(game.session.active_bettor);
 
     if(game.session.past_performance_active != 0u) {
         struct RaceEntry *entry = &race->entries[game.session.past_performance_entry];
@@ -1297,13 +1329,27 @@ static void refresh_betting_text_blocks(void)
         (unsigned)(game.session.active_bettor + 1u),
         (unsigned)game.session.bettor_count);
 
-    sprintf(summary_line, "R%u %s %uF  $%u",
-        (unsigned)(game.session.current_race + 1u),
-        surface_name[race->surface],
-        (unsigned)race->distance_furlongs,
-        (unsigned)bettor->bankroll);
+    if(bettor_busted) {
+        sprintf(summary_line, "R%u %s %uF  OUT",
+            (unsigned)(game.session.current_race + 1u),
+            surface_name[race->surface],
+            (unsigned)race->distance_furlongs);
+        strcpy(amount_value, " --- ");
+        strcpy(horse_value, "OUT");
+        horse_label = "STATUS";
+        state_label = "BUST";
+    } else {
+        sprintf(summary_line, "R%u %s %uF  $%u",
+            (unsigned)(game.session.current_race + 1u),
+            surface_name[race->surface],
+            (unsigned)race->distance_furlongs,
+            (unsigned)bettor->bankroll);
+    }
 
-    if(wager->type == BET_TYPE_NONE) {
+    if(bettor_busted) {
+        help_top = game.session.betting_complete ? "START NEXT  L/R VIEW" : "WAIT NEXT BETTOR";
+        help_bottom = "BUSTED OUT OF CASH";
+    } else if(wager->type == BET_TYPE_NONE) {
         strcpy(amount_value, " --- ");
         strcpy(horse_value, "PASS");
         state_label = wager->confirmed ? "DONE" : "PASS";
@@ -1326,7 +1372,11 @@ static void refresh_betting_text_blocks(void)
         state_label = wager->confirmed ? "LOCK" : "EDIT";
     }
 
-    if(game.session.betting_complete) {
+    if(bettor_busted) {
+        if(game.session.betting_complete) {
+            strcpy(title_line, "BETS LOCKED");
+        }
+    } else if(game.session.betting_complete) {
         strcpy(title_line, "BETS LOCKED");
         help_top = "START NEXT  B EDIT";
         help_bottom = "L/R VIEW  X TYPE";
