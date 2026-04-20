@@ -1,6 +1,41 @@
 #include "session_logic.h"
 
+#include <string.h>
+
 #include "wager_math.h"
+
+static uint8_t session_logic_pack_top_two_colors(const struct SessionState *session,
+    const struct RaceCard *race)
+{
+    uint8_t winner_entry = race->result.finish_order[0];
+    uint8_t runner_up_entry = race->result.finish_order[1];
+    uint8_t winner_color = session->stable[race->entries[winner_entry].horse_index].color;
+    uint8_t runner_up_color = session->stable[race->entries[runner_up_entry].horse_index].color;
+
+    return (uint8_t)((winner_color << 4) | runner_up_color);
+}
+
+static void session_logic_append_past_performance(struct Horse *horse,
+    uint8_t distance_furlongs, uint8_t surface, uint8_t finish_position,
+    uint8_t top_two_colors, uint16_t finish_time)
+{
+    struct PastPerformance performance;
+
+    performance.distance_furlongs = distance_furlongs;
+    performance.surface = surface;
+    performance.finish_position = finish_position;
+    performance.top2 = top_two_colors;
+    performance.finish_time = finish_time;
+
+    if(horse->history_count < 3u) {
+        horse->history[horse->history_count] = performance;
+        horse->history_count++;
+        return;
+    }
+
+    memmove(&horse->history[0], &horse->history[1], sizeof(horse->history[0]) * 2u);
+    horse->history[2] = performance;
+}
 
 static uint8_t session_logic_selected_entry(const struct SessionState *session, uint8_t bettor_index)
 {
@@ -114,6 +149,32 @@ void session_logic_settle_race_wagers(struct SessionState *session)
 
         session->bettors[i].bankroll = (uint16_t)(session->bettors[i].bankroll + payout);
         session->bettors[i].active = (session->bettors[i].bankroll != 0u) ? 1u : 0u;
+    }
+}
+
+void session_logic_record_race_result(struct SessionState *session,
+    uint8_t race_index, const uint8_t finish_order[4], uint16_t winning_time)
+{
+    struct RaceCard *race = &session->races[race_index];
+    uint8_t top_two_colors;
+
+    for(uint8_t i = 0u; i < 4u; i++) {
+        race->result.finish_order[i] = finish_order[i];
+    }
+
+    race->result.winning_time = winning_time;
+    top_two_colors = session_logic_pack_top_two_colors(session, race);
+
+    for(uint8_t i = 0u; i < 4u; i++) {
+        uint8_t entry_index = race->result.finish_order[i];
+        struct Horse *horse = &session->stable[race->entries[entry_index].horse_index];
+
+        session_logic_append_past_performance(horse,
+            race->distance_furlongs,
+            race->surface,
+            (uint8_t)(i + 1u),
+            top_two_colors,
+            race->result.winning_time);
     }
 }
 

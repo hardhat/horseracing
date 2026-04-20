@@ -750,38 +750,6 @@ static void assign_race_odds(struct RaceCard *race)
     }
 }
 
-static uint8_t pack_top_two_colors(const struct RaceCard *race)
-{
-    uint8_t winner_entry = race->result.finish_order[0];
-    uint8_t runner_up_entry = race->result.finish_order[1];
-    uint8_t winner_color = game.session.stable[race->entries[winner_entry].horse_index].color;
-    uint8_t runner_up_color = game.session.stable[race->entries[runner_up_entry].horse_index].color;
-
-    return (uint8_t)((winner_color << 4) | runner_up_color);
-}
-
-static void append_past_performance(struct Horse *horse,
-    uint8_t distance_furlongs, uint8_t surface, uint8_t finish_position,
-    uint8_t top_two_colors, uint16_t finish_time)
-{
-    struct PastPerformance performance;
-
-    performance.distance_furlongs = distance_furlongs;
-    performance.surface = surface;
-    performance.finish_position = finish_position;
-    performance.top2 = top_two_colors;
-    performance.finish_time = finish_time;
-
-    if(horse->history_count < 3u) {
-        horse->history[horse->history_count] = performance;
-        horse->history_count++;
-        return;
-    }
-
-    memmove(&horse->history[0], &horse->history[1], sizeof(horse->history[0]) * 2u);
-    horse->history[2] = performance;
-}
-
 static void init_generated_session(void)
 {
     uint8_t configured_bettors;
@@ -1220,27 +1188,16 @@ static void settle_race_wagers(void)
 
 static void record_race_result(void)
 {
-    struct RaceCard *race = &game.session.races[game.session.current_race];
-    uint8_t top_two_colors;
+    uint8_t finish_order[4];
 
     for(uint8_t i = 0; i < 4u; i++) {
-        race->result.finish_order[i] = race_finish_order[i];
+        finish_order[i] = race_finish_order[i];
     }
 
-    race->result.winning_time = (uint16_t)(600u + race_tick * 3u);
-    top_two_colors = pack_top_two_colors(race);
-
-    for(uint8_t i = 0; i < 4u; i++) {
-        uint8_t entry_index = race->result.finish_order[i];
-        struct Horse *horse = &game.session.stable[race->entries[entry_index].horse_index];
-
-        append_past_performance(horse,
-            race->distance_furlongs,
-            race->surface,
-            (uint8_t)(i + 1u),
-            top_two_colors,
-            race->result.winning_time);
-    }
+    session_logic_record_race_result(&game.session,
+        game.session.current_race,
+        finish_order,
+        (uint16_t)(600u + race_tick * 3u));
 }
 
 static void render_race_results_screen(void)
