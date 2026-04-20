@@ -160,6 +160,7 @@ void input_game(uint8_t key, bool down);
 void update_game(void);
 void draw_game(void);
 void game_show_dialog(const char *text);
+uint16_t game_next_random_u16(void);
 
 void init_gameover(void);
 void input_gameover(uint8_t key, bool down);
