@@ -4,9 +4,10 @@
 
 These are the next implementation targets with the best gameplay payoff and the fewest prerequisite gaps.
 
-- [x] Implement integer-only pace simulation using horse traits, race distance, surface, and fatigue.
-- [x] Make Coax and Whip materially affect race outcomes for the human-controlled outside horse.
-- [x] Surface busted bettors as out of the game in the betting, results, and standings UI.
+- [ ] Verify a full 10-race session runs from title to final standings without corrupting state.
+- [ ] Implement horizontal race progression with independent foreground and background scrolling.
+- [ ] Trigger a cue as the leader approaches each furlong marker.
+- [ ] Verify payouts, bankroll updates, and automatic progression are correct across all 10 races.
 
 ## MVP
 
@@ -14,7 +15,7 @@ The MVP is the smallest version that delivers the complete original game loop:
 
 - [x] Boot to a title screen and start a new 10-race program.
 - [x] Implement player setup for 1 to 6 bettors.
-- [ ] Implement setup for 0 or 1 human jockeys in the one-controller build.
+- [x] Implement setup for 0 or 1 human jockeys in the one-controller build.
 - [x] Detect and read SNES controller input needed for menus and racing.
 - [x] Define compact data structures for bettors, horses, race entries, and race results.
 - [x] Implement generation of 8 persistent horses at the start of a new session.
@@ -71,12 +72,12 @@ The MVP is the smallest version that delivers the complete original game loop:
 - [ ] Implement core audio cues: UI click, error buzz, call to post, gate clang, hoofbeats, furlong gong, whip crack, and crowd cheer.
 - [ ] Verify the full 10-race loop runs end to end without resetting or corrupting state.
 - [ ] Verify all MVP features work with one controller.
-- [ ] Verify all MVP features work with two controllers where applicable.
 - [ ] Verify performance is acceptable on the 10 MHz Z80 target.
 
 ## MVP By Track
 
 This section reorganizes the MVP into parallel tracks for implementation planning.
+Only open items are listed here to avoid duplicating completed work from the MVP checklist above.
 
 ### Engineering
 
@@ -84,84 +85,51 @@ Build these in order. Later steps should not start until their prerequisites are
 
 #### Step 1: Core Runtime Foundation
 
-- [x] Define compact runtime structures for bettors, horses, races, wagers, past performances, and results.
-- [x] Implement SNES controller input handling for menus and races.
-- [x] Build the boot flow from title screen to new 10-race program.
-- [x] Implement player setup for 1 to 6 bettors.
-- [ ] Implement jockey setup for 0 or 1 human riders.
+- [ ] Verify core runtime structures initialize without corrupt state.
 
 #### Step 2: Session Initialization
 
-- [x] Generate 8 persistent horses at session start.
-- [x] Generate persistent horse traits for pace, endurance, break speed, stretch speed, and surface affinity.
-- [x] Generate a 10-race program with entrants, distance, and surface.
-- [x] Implement bankroll tracking with $750 starting stake and $250 max wager cap.
-- [x] Prevent busted bettors from wagering in later rounds.
-- [x] Surface busted-bettor status in the UI.
+- [ ] Verify horse traits remain persistent across the full 10-race session.
 
 #### Step 3: Betting Phase
 
-- [x] Implement the betting sheet logic.
-- [x] Implement turn-based pass-and-play wager entry.
-- [x] Implement tentative odds generation and display.
-- [x] Update displayed odds as bets are placed and lock Win payout odds at confirmation.
-- [x] Implement Win bet entry and validation.
-- [x] Implement Exacta bet entry and validation.
-- [x] Deduct bankroll immediately when a wager is confirmed.
+- [ ] Verify bettors cannot wager more than bankroll or more than $250.
+- [ ] Verify only the 4 current entrants can be selected for Win and Exacta bets.
+- [ ] Verify Exacta order matters and pays correctly at 15:1.
+- [ ] Verify odds update correctly as bets are placed and Win payouts use locked odds.
 
 #### Step 4: Race History And Handicapping Data
 
-- [x] Implement past-performance data capture for every completed race.
-- [x] Limit displayed past performances to the last 3 runs per horse.
-- [x] Implement the past performance screen and navigation back to betting.
+- [ ] Verify only the last 3 race records are shown per horse.
+- [ ] Verify past performance formatting is fast to compare during betting.
 
 #### Step 5: Jockey Assignment And Race Setup
 
-- [x] Implement jockey assignment before each race.
-- [x] Support all-CPU races.
-- [x] Support one human-controlled outside horse.
-- [x] Implement the starting gate sequence.
+- [ ] Support two human-controlled outside horses when two controllers are available.
 
 #### Step 6: Core Race Simulation
 
-- [x] Implement the side-view race simulation.
-- [x] Implement four race lanes and inside-lane path advantage.
-- [x] Implement integer-only pace simulation.
-- [x] Apply distance, surface, and fatigue effects during the race.
-- [x] Implement lane changing for human jockeys.
-- [x] Implement CPU lane choice with rail preference and passing behavior.
-- [x] Implement Coax behavior.
-- [x] Implement Whip behavior.
-- [x] Implement late-race CPU whip usage.
-- [x] Implement furlong marker state and leader-based timing.
-- [x] Detect finish order and winning time.
+- [ ] Trigger a cue as the leader approaches each furlong marker.
+- [ ] Verify lane changes, rail preference, Coax, and Whip all affect race outcomes.
+- [ ] Verify finish order and winning time are correct.
 
 #### Step 7: Race Presentation Integration
 
 - [ ] Implement independent foreground and background scrolling during races.
+- [ ] Verify performance is acceptable on the 10 MHz Z80 target.
 
 #### Step 8: Settlement And Session Progression
 
-- [x] Implement results flow.
-- [x] Implement Win bet settlement.
-- [x] Implement Exacta bet settlement.
-- [x] Update bankrolls after each race.
-- [x] Advance automatically to the next race.
-- [x] Implement end-of-session standings after race 10.
+- [ ] Verify payouts and bankroll updates are correct after every race.
+- [ ] Verify automatic progression from results to the next race works across all 10 races.
+- [ ] Verify a full 10-race session runs from title to final standings without corrupting state.
 
 ### Art
 
-- [x] Define an MVP tile budget that stays within the 256 shared 16x16 tile limit.
-- [x] Produce a minimal title screen tile set.
-- [x] Produce MVP betting-sheet UI tiles.
-- [x] Produce MVP past-performance UI tiles.
 - [ ] Produce a readable font, numerals, and betting symbols.
 - [ ] Produce horse art that reads clearly by color.
 - [ ] Produce minimal jockey art.
 - [ ] Produce a minimal starting gate visual.
-- [x] Produce race track tiles for rails, lane reads, finish line, and furlong markers.
-- [x] Produce background scenery tiles for parallax racing scenes.
-- [x] Produce dry, muddy, and turf visual variants using palettes and minimal tile changes.
 - [ ] Produce tote-board and final-standings presentation tiles.
 - [ ] Verify all MVP art assets fit the tile and sprite budget.
 
@@ -180,9 +148,6 @@ Build these in order. Later steps should not start until their prerequisites are
 
 ### Testing
 
-- [x] Extract the race simulation into a host-testable module.
-- [x] Add a separate Linux test Makefile delegated from the main Makefile.
-- [x] Add deterministic Linux-side unit tests for race distance, surface, human Whip timing, and CPU late-race Whip behavior.
 - [ ] Verify a full 10-race session runs from title to final standings without corrupting state.
 - [ ] Verify all MVP features work with one controller.
 - [ ] Verify two-controller jockey support works when available.
@@ -194,8 +159,6 @@ Build these in order. Later steps should not start until their prerequisites are
 - [ ] Verify odds update correctly as bets are placed and Win payouts use locked odds.
 - [ ] Verify horse traits remain persistent across the entire 10-race session.
 - [ ] Verify only the last 3 race records are shown per horse.
-- [x] Verify dry, muddy, and turf conditions all affect race outcomes.
-- [x] Verify distance groups affect pace and fatigue.
 - [ ] Verify lane changes, rail preference, Coax, and Whip all affect race outcomes.
 - [ ] Verify finish order and winning time are correct.
 - [ ] Verify payouts and bankroll updates are correct after every race.
@@ -205,6 +168,7 @@ Build these in order. Later steps should not start until their prerequisites are
 ## MVP Milestones
 
 This section groups the MVP into delivery checkpoints with clear completion gates.
+Only incomplete tasks and gates are listed here to avoid repeating completed checklist items.
 
 ### Milestone 1: Core Framework
 
@@ -213,17 +177,10 @@ Create the base program flow, input layer, and runtime data model.
 
 Tasks:
 
-- [x] Build boot flow from title screen to a new session.
-- [x] Implement player setup for 1 to 6 bettors.
-- [ ] Implement jockey setup for 0 or 1 human riders.
-- [x] Implement SNES controller input handling for menus and races.
-- [x] Define compact data structures for bettors, horses, race programs, wagers, and results.
-- [x] Implement session reset and new-game initialization.
+- [ ] Verify session reset and new-game initialization remain free of corrupt state.
 
 Completion gate:
 
-- [x] A new session can be started from the title screen.
-- [x] The game can capture valid controller input and move cleanly through setup.
 - [ ] Core runtime structures initialize without corrupt state.
 
 ### Milestone 2: Race Program And Betting Loop
@@ -233,27 +190,11 @@ Make one race playable from the betting side before live race presentation is fi
 
 Tasks:
 
-- [x] Generate 8 persistent horses at session start.
-- [x] Generate persistent horse traits for pace, endurance, break speed, stretch speed, and surface affinity.
-- [x] Generate a 10-race program with entrants, surfaces, and distance groups.
-- [x] Implement bankroll tracking with $750 starting stake.
-- [x] Enforce the $250 max wager cap.
-- [x] Prevent busted bettors from placing further bets.
-- [x] Show busted bettors as out of the game in the UI.
-- [x] Implement the betting sheet logic.
-- [x] Show race number, entrants, odds, distance, surface, and bettor bankrolls.
-- [x] Implement pass-and-play wager entry.
-- [x] Implement Win bets.
-- [x] Implement Exacta bets.
-- [x] Deduct bankroll immediately when a wager is confirmed.
-- [x] Implement tentative odds generation and display.
-- [x] Update displayed odds as wagers are placed and lock Win payout odds at confirmation.
+- [ ] Verify bankroll math is correct for valid and invalid wagers.
 
 Completion gate:
 
-- [x] The first race can be configured and wagered entirely through the betting UI.
 - [ ] Bankroll math is correct for valid and invalid wagers.
-- [x] Win and Exacta bets can be entered and stored correctly.
 
 ### Milestone 3: Past Performances And Results Data
 
@@ -262,17 +203,11 @@ Support the original handicapping loop by capturing and displaying prior races.
 
 Tasks:
 
-- [x] Implement race result records per horse.
-- [x] Store up to the last 3 runs per horse.
-- [x] Implement the past performance screen.
-- [x] Show distance, surface, time, and finish summary for prior runs.
-- [x] Support switching between betting and past performance views.
+- [ ] Verify only the last 3 race records are shown per horse.
 
 Completion gate:
 
-- [x] After completed races, each horse carries forward usable past-performance data.
-- [x] The betting phase can display only the last 3 runs per horse.
-- [x] Players can compare entrants before wagering without leaving the betting flow.
+- [ ] Past-performance data remains correct across a full 10-race session.
 
 ### Milestone 4: Live Race Prototype
 
@@ -281,26 +216,14 @@ Get the race itself running with minimal presentation but correct gameplay behav
 
 Tasks:
 
-- [x] Implement the starting gate sequence.
-- [x] Implement side-view race simulation for 4 horses.
 - [ ] Implement foreground and background scrolling.
-- [x] Implement four race lanes with inside-lane advantage.
-- [x] Implement lane changing for human jockeys.
-- [x] Implement CPU lane behavior with rail preference and passing.
-- [x] Implement integer-only pace simulation.
-- [x] Apply distance, surface, and fatigue effects.
-- [x] Implement Coax behavior.
-- [x] Implement Whip behavior.
-- [x] Implement late-race CPU whip usage.
-- [x] Implement furlong markers and leader-based timing.
-- [x] Detect finish order and winning time.
+- [ ] Trigger a cue as the leader approaches each furlong marker.
 
 Completion gate:
 
-- [x] A race can be started from the betting phase and run to completion.
 - [ ] Human jockey controls affect at least the outside horses correctly.
 - [ ] CPU horses show distinct behavior based on traits, surface, and distance.
-- [x] Finish order and winning time are recorded correctly.
+- [ ] Race presentation remains readable and performant while the field is moving.
 
 ### Milestone 5: Session Loop Completion
 
@@ -309,21 +232,12 @@ Connect betting, racing, results, and progression into a full 10-race game.
 
 Tasks:
 
-- [x] Implement jockey assignment before each race.
-- [x] Support all-CPU races.
-- [x] Support one human-controlled outside horse.
-- [x] Display tote-board-style race results.
-- [x] Settle Win and Exacta payouts.
-- [x] Update bettor bankrolls after each race.
-- [x] Advance automatically from results to the next betting phase.
-- [x] End the session after race 10.
-- [x] Display final standings and overall winner.
+- [ ] Verify payouts and bankroll updates are correct after every race.
 
 Completion gate:
 
 - [ ] The game runs from title screen through all 10 races without manual resets.
 - [ ] Bets settle correctly after every race.
-- [x] Final bankroll standings identify a winner after race 10.
 
 ### Milestone 6: MVP Presentation Package
 
@@ -332,11 +246,9 @@ Add the minimum art and audio needed for a coherent playable release.
 
 Tasks:
 
-- [x] Define an MVP tile budget that fits the 256 shared 16x16 tile limit.
 - [ ] Produce minimal title, betting-sheet, past-performance, race, tote-board, and standings visuals.
 - [ ] Produce readable font, numerals, and betting symbols.
 - [ ] Produce minimal horse and jockey art readable by color.
-- [x] Produce dry, muddy, and turf visual variants.
 - [ ] Implement core audio cues: UI click, error buzz, call to post, gate clang, hoofbeats, furlong gong, whip crack, and crowd cheer.
 - [ ] Hook audio to the correct gameplay events.
 
