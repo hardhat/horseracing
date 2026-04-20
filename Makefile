@@ -37,8 +37,8 @@ obj/%.rel: src/%.asm
 img/%.zts: img/%.gif
 	$(ZVB_SDK_PATH)/tools/zeal2gif/gif2zeal.py -l -i $<
 
-#img/theme.gif img/accent.gif: tools/make_theme_gif.py img/hud.gif
-#	python3 tools/make_theme_gif.py
+img/accent.gif: tools/make_accent_gif.py img/hud.gif
+	python3 tools/make_accent_gif.py
 
 src/level1.h: level/level1.tmx level/map.tsx level/title.tsx level/hud.tsx
 	python3 tools/tmx_to_h.py level/level1.tmx src/level1.h
