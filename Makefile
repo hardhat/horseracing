@@ -1,7 +1,7 @@
 ZOS_PATH ?= ../Zeal-8-bit-OS
 ZVB_SDK_PATH ?= ../Zeal-VideoBoard-SDK
 BIN=bin/horser.bin
-OBJ=obj/main.rel obj/game.rel obj/menu.rel obj/dat.rel obj/controller.rel obj/text.rel obj/textaccel.rel obj/race_sim.rel obj/wager_math.rel obj/session_logic.rel
+OBJ=obj/main.rel obj/game.rel obj/game_ui.rel obj/menu.rel obj/dat.rel obj/controller.rel obj/text.rel obj/textaccel.rel obj/race_sim.rel obj/wager_math.rel obj/session_logic.rel
 IMG=img/title.zts img/map.zts img/hud.zts img/sprites.zts img/theme.zts img/accent.zts
 DAT=bin/horser.dat
 CC=sdcc
@@ -47,6 +47,7 @@ test-linux:
 	$(MAKE) -C tests/linux ROOT=../..
 
 obj/game.rel: src/game.c src/game.h src/main.h src/race_sim.h
+obj/game_ui.rel: src/game_ui.c src/game_ui.h src/game.h src/main.h src/text.h
 obj/menu.rel: src/menu.c src/menu.h src/game.h src/text.h
 obj/text.rel: src/text.c src/text.h src/main.h
 obj/main.rel: src/main.c src/game.h src/menu.h src/dat.h
