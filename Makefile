@@ -1,7 +1,7 @@
 ZOS_PATH ?= ../Zeal-8-bit-OS
 ZVB_SDK_PATH ?= ../Zeal-VideoBoard-SDK
 BIN=bin/horser.bin
-OBJ=obj/main.rel obj/game.rel obj/menu.rel obj/dat.rel obj/controller.rel obj/text.rel obj/textaccel.rel obj/race_sim.rel
+OBJ=obj/main.rel obj/game.rel obj/menu.rel obj/dat.rel obj/controller.rel obj/text.rel obj/textaccel.rel obj/race_sim.rel obj/wager_math.rel obj/session_logic.rel
 IMG=img/title.zts img/map.zts img/hud.zts img/sprites.zts img/theme.zts img/accent.zts
 DAT=bin/horser.dat
 CC=sdcc
@@ -53,6 +53,8 @@ obj/main.rel: src/main.c src/game.h src/menu.h src/dat.h
 obj/dat.rel: src/dat.c src/dat.h
 obj/controller.rel: src/controller.c src/controller.h
 obj/race_sim.rel: src/race_sim.c src/race_sim.h
+obj/wager_math.rel: src/wager_math.c src/wager_math.h src/game.h
+obj/session_logic.rel: src/session_logic.c src/session_logic.h src/game.h src/wager_math.h
 
 clean:
 	-rm $(OBJ)

@@ -7,6 +7,8 @@
 #include "game.h"
 #include "race_sim.h"
 #include "text.h"
+#include "wager_math.h"
+#include "session_logic.h"
 
 #define TEXT_TILE_ARENA_BASE  ((uint8_t)0x9Cu)
 #define TEXT_TILE_ARENA_LIMIT ((uint8_t)0xFFu)
@@ -482,12 +484,7 @@ static void sync_selected_exacta_pick(struct Wager *wager)
 
 static void reset_wager(struct Wager *wager)
 {
-    wager->amount = 50u;
-    wager->type = BET_TYPE_WIN;
-    wager->first_pick = 0u;
-    wager->second_pick = 1u;
-    wager->locked_win_odds = 0u;
-    wager->confirmed = 0u;
+    session_logic_reset_wager(wager);
 }
 
 static void sync_selected_entry(void)
@@ -839,33 +836,8 @@ static void init_generated_session(void)
 
 static void commit_wager(struct Bettor *bettor, struct Wager *wager)
 {
-    uint16_t max_amount = bettor->bankroll;
-
-    if(wager->type == BET_TYPE_NONE) {
-        wager->amount = 0u;
-        wager->locked_win_odds = 0u;
-        wager->confirmed = 1u;
-        return;
-    }
-
-    if(max_amount > 250u) {
-        max_amount = 250u;
-    }
-    if(max_amount == 0u) {
-        return;
-    }
-    if(wager->amount > max_amount) {
-        wager->amount = max_amount;
-    }
-
-    if(wager->type == BET_TYPE_WIN) {
-        wager->locked_win_odds = game.session.races[game.session.current_race].entries[wager->first_pick].odds;
-    } else {
-        wager->locked_win_odds = 0u;
-    }
-
-    bettor->bankroll = (uint16_t)(bettor->bankroll - wager->amount);
-    wager->confirmed = 1u;
+    wager_math_commit_wager(&bettor->bankroll, wager,
+        &game.session.races[game.session.current_race]);
     assign_race_odds(&game.session.races[game.session.current_race]);
 }
 
@@ -1208,26 +1180,7 @@ static void skip_ahead_races(uint8_t count)
 
 static uint16_t wager_payout(const struct Wager *wager, const struct RaceCard *race)
 {
-    if(wager->confirmed == 0u || wager->type == BET_TYPE_NONE) {
-        return 0u;
-    }
-
-    if(wager->type == BET_TYPE_WIN) {
-        uint8_t winner = race->result.finish_order[0];
-
-        if(wager->first_pick == winner) {
-            return (uint16_t)(wager->amount * (uint16_t)(wager->locked_win_odds + 1u));
-        }
-        return 0u;
-    }
-
-    if(wager->type == BET_TYPE_EXACTA
-        && wager->first_pick == race->result.finish_order[0]
-        && wager->second_pick == race->result.finish_order[1]) {
-        return (uint16_t)(wager->amount * 16u);
-    }
-
-    return 0u;
+    return wager_math_payout(wager, race);
 }
 
 static void finalize_bettor_activity(void)
@@ -1262,15 +1215,7 @@ static void build_standings_order(void)
 
 static void settle_race_wagers(void)
 {
-    struct RaceCard *race = &game.session.races[game.session.current_race];
-
-    for(uint8_t i = 0; i < game.session.bettor_count; i++) {
-        uint16_t payout = wager_payout(&game.session.wagers[i], race);
-
-        game.session.bettors[i].bankroll = (uint16_t)(game.session.bettors[i].bankroll + payout);
-    }
-
-    finalize_bettor_activity();
+    session_logic_settle_race_wagers(&game.session);
 }
 
 static void record_race_result(void)
@@ -1339,7 +1284,7 @@ static void render_race_results_screen(void)
 
     for(uint8_t i = 0; i < game.session.bettor_count; i++) {
         uint8_t x = (i & 1u) == 0u ? 2u : 11u;
-        uint16_t payout = wager_payout(&game.session.wagers[i], race);
+        uint16_t payout = wager_math_payout(&game.session.wagers[i], race);
 
         if(payout > 0u) {
             sprintf(status_line, "B%u +$%u", (unsigned)(i + 1u), (unsigned)payout);
@@ -1424,8 +1369,7 @@ static void finish_race_and_show_results(void)
 
 static void advance_after_results(void)
 {
-    if(game.session.current_race + 1u < 10u) {
-        game.session.current_race++;
+    if(session_logic_advance_after_results(&game.session)) {
         game.resume_session = 1u;
         set_state(GAME_STATE_GAME);
         return;
