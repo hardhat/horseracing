@@ -182,6 +182,8 @@ enum TILE_COLORS
 #define PAL_MAP      48  // map tileset palette:     64 colors (indices  48-111)
 #define PAL_HUD     112  // hud tileset palette:      8 colors (indices 112-119)
 #define PAL_SPRITES 120  // sprite tileset palette:  32 colors (indices 120-151)
+#define PAL_THEME   152  // theme tileset palette:   16 colors (indices 152-167)
+#define PAL_ACCENT  168  // accent tileset palette:  16 colors (indices 168-183)
 
 enum FONT_FACE
 {

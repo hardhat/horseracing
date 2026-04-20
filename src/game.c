@@ -2189,7 +2189,7 @@ void draw_game(void)
     if(game.session.past_performance_active == 0u
         && game.session.betting_complete == 0u
         && game.session.selected_field == BETTING_FIELD_HORSE) {
-        add_sprite(0, (uint8_t)(selected_row_y() * 16u), TILE_CURSOR);
+        add_sprite(48, (uint8_t)(selected_row_y() * 16u), TILE_CURSOR);
     }
     render_sprites();
 }

@@ -219,12 +219,16 @@ void init(void)
     }
     render_tilemap(0);
 
-    gfx_tileset_options theme_options = {TILESET_COMP_LZ, (uint16_t)TILE_THEME_TOP_LEFT * 256u, PAL_HUD, 1};
+    gfx_tileset_options theme_options = {TILESET_COMP_LZ, (uint16_t)TILE_THEME_TOP_LEFT * 256u, PAL_THEME, 1};
     dat_load_tileset(DAT_BLOCK_THEME_TS, text_tiles, &ts_size);
+    dat_load_palette(DAT_BLOCK_THEME_PAL, &pal_ptr, &pal_size);
+    gfx_palette_load(&ctx, pal_ptr, pal_size, PAL_THEME);
     gfx_tileset_load(&ctx, text_tiles, ts_size, &theme_options);
 
-    gfx_tileset_options accent_options = {TILESET_COMP_LZ, (uint16_t)TILE_THEME_ACCENT * 256u, PAL_HUD, 1};
+    gfx_tileset_options accent_options = {TILESET_COMP_LZ, (uint16_t)TILE_THEME_ACCENT * 256u, PAL_ACCENT, 1};
     dat_load_tileset(DAT_BLOCK_ACCENT_TS, text_tiles, &ts_size);
+    dat_load_palette(DAT_BLOCK_ACCENT_PAL, &pal_ptr, &pal_size);
+    gfx_palette_load(&ctx, pal_ptr, pal_size, PAL_ACCENT);
     gfx_tileset_load(&ctx, text_tiles, ts_size, &accent_options);
 
     gfx_tileset_options options3 = {TILESET_COMP_LZ, (uint16_t)TILE_COLOR_SPRITES*256u, PAL_SPRITES, 1};
