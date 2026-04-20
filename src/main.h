@@ -52,9 +52,9 @@ enum {
 enum TILE_COLORS
 {
     TILE_COLOR_BLACK = 0,
-    TILE_COLOR_WHITE = 1, // 1-4 are white
-    TILE_COLOR_RED = 5, // 5-8 are red
-    TILE_COLOR_GREEN = 9, // 9-12 are green
+    TILE_COLOR_WHITE = 1, // 1-4 are free theme tiles
+    TILE_COLOR_RED = 5, // 5-8 are free theme tiles
+    TILE_COLOR_GREEN = 9, // 9-12 are free theme tiles
     TILE_COLOR_BLUE = 13,
     TILE_CURSOR = 14,
     TILE_COLOR_TITLE   = 18,   // title tileset:   floor(285/16)=17 × 2 = 34 tiles (18-51)
@@ -91,6 +91,22 @@ enum TILE_COLORS
     TILE_HUD_MARKER_SECOND           = TILE_COLOR_HUD + 21,
     TILE_HUD_PP_TIME                 = TILE_COLOR_HUD + 22,
     TILE_HUD_PP_FINISH               = TILE_COLOR_HUD + 23,
+
+    TILE_THEME_TOP_LEFT              = TILE_COLOR_WHITE + 0,
+    TILE_THEME_TOP_FILL_A            = TILE_COLOR_WHITE + 1,
+    TILE_THEME_TOP_FILL_B            = TILE_COLOR_WHITE + 2,
+    TILE_THEME_TOP_RIGHT             = TILE_COLOR_WHITE + 3,
+    TILE_THEME_MID_LEFT              = TILE_COLOR_RED + 0,
+    TILE_THEME_MID_FILL_A            = TILE_COLOR_RED + 1,
+    TILE_THEME_MID_FILL_B            = TILE_COLOR_RED + 2,
+    TILE_THEME_MID_RIGHT             = TILE_COLOR_RED + 3,
+    TILE_THEME_BODY_A                = TILE_THEME_MID_FILL_A,
+    TILE_THEME_BODY_B                = TILE_THEME_MID_FILL_B,
+    TILE_THEME_BOTTOM_LEFT           = TILE_COLOR_GREEN + 0,
+    TILE_THEME_BOTTOM_FILL_A         = TILE_COLOR_GREEN + 1,
+    TILE_THEME_BOTTOM_FILL_B         = TILE_COLOR_GREEN + 2,
+    TILE_THEME_BOTTOM_RIGHT          = TILE_COLOR_GREEN + 3,
+    TILE_THEME_ACCENT                = TILE_COLOR_BLUE,
 
     // Prototype horse-racing track sheet aliases matching img/map.gif.
     TILE_TRACK_DRY_CLEAR_0           = TILE_COLOR_MAP + 0,

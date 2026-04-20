@@ -25,7 +25,11 @@
 #define DAT_BLOCK_HUD_PAL    6
 #define DAT_BLOCK_SPRITES_TS     7
 #define DAT_BLOCK_SPRITES_PAL    8
-#define DAT_BLOCK_COUNT         9
+#define DAT_BLOCK_THEME_TS     9
+#define DAT_BLOCK_THEME_PAL    10
+#define DAT_BLOCK_ACCENT_TS    11
+#define DAT_BLOCK_ACCENT_PAL   12
+#define DAT_BLOCK_COUNT         13
 
 // On-disk header entry (8 bytes, packed).
 // Entry 0 is always the magic cookie:

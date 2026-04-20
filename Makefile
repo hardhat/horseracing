@@ -2,7 +2,7 @@ ZOS_PATH ?= ../Zeal-8-bit-OS
 ZVB_SDK_PATH ?= ../Zeal-VideoBoard-SDK
 BIN=bin/horser.bin
 OBJ=obj/main.rel obj/game.rel obj/menu.rel obj/dat.rel obj/controller.rel obj/text.rel obj/textaccel.rel obj/race_sim.rel
-IMG=img/title.zts img/map.zts img/hud.zts img/sprites.zts
+IMG=img/title.zts img/map.zts img/hud.zts img/sprites.zts img/theme.zts img/accent.zts
 DAT=bin/horser.dat
 CC=sdcc
 CFLAGS=-mz80 --std-c2x -c -I $(ZOS_PATH)/kernel_headers/sdcc/include/ -I $(ZVB_SDK_PATH)/include --codeseg TEXT --debug
@@ -36,6 +36,9 @@ obj/%.rel: src/%.asm
 
 img/%.zts: img/%.gif
 	$(ZVB_SDK_PATH)/tools/zeal2gif/gif2zeal.py -l -i $<
+
+img/theme.gif img/accent.gif: tools/make_theme_gif.py img/hud.gif
+	python3 tools/make_theme_gif.py
 
 src/level1.h: level/level1.tmx level/map.tsx level/title.tsx level/hud.tsx
 	python3 tools/tmx_to_h.py level/level1.tmx src/level1.h

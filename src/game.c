@@ -141,22 +141,72 @@ static uint8_t horse_text_color(uint8_t color)
             return COL_BROWN;
 
         case HORSE_COLOR_BLACK:
-            return COL_DARK_GRAY;
+            return COL_LIGHT_GRAY;
 
         default:
             return COL_WHITE;
     }
 }
 
-static void draw_board_shell(uint8_t fill_tile, const char *title)
+static void draw_board_shell(void)
 {
-    fill_tilemap(fill_tile, 0, 0, TILES_ACROSS, TILES_DOWN);
-    fill_tilemap(TILE_COLOR_BLACK, 1, 1, 18, 13);
-    fill_tilemap(fill_tile, 2, 2, 16, 11);
-    fill_tilemap(TILE_COLOR_BLACK, 2, 2, 16, 2);
-    fill_tilemap(TILE_COLOR_BLACK, 2, 5, 16, 1);
-    fill_tilemap(TILE_COLOR_BLACK, 2, 12, 16, 2);
-    text_draw_strip_alloc(centered_strip_x(title), 2, title, COL_YELLOW, COL_BLACK, 4, true);
+    for(uint8_t y = 0u; y < TILES_DOWN; y++) {
+        for(uint8_t x = 0u; x < TILES_ACROSS; x++) {
+            uint8_t tile;
+
+            if(y == 0u) {
+                if(x == 0u) {
+                    tile = TILE_THEME_TOP_LEFT;
+                } else if(x == (uint8_t)(TILES_ACROSS - 1u)) {
+                    tile = TILE_THEME_TOP_RIGHT;
+                } else {
+                    tile = ((x & 1u) == 0u) ? TILE_THEME_TOP_FILL_A : TILE_THEME_TOP_FILL_B;
+                }
+            } else if(y == (uint8_t)(TILES_DOWN - 1u)) {
+                if(x == 0u) {
+                    tile = TILE_THEME_BOTTOM_LEFT;
+                } else if(x == (uint8_t)(TILES_ACROSS - 1u)) {
+                    tile = TILE_THEME_BOTTOM_RIGHT;
+                } else {
+                    tile = ((x & 1u) == 0u) ? TILE_THEME_BOTTOM_FILL_A : TILE_THEME_BOTTOM_FILL_B;
+                }
+            } else if(x == 0u) {
+                tile = TILE_THEME_MID_LEFT;
+            } else if(x == (uint8_t)(TILES_ACROSS - 1u)) {
+                tile = TILE_THEME_MID_RIGHT;
+            } else {
+                tile = (((x + y) & 1u) == 0u) ? TILE_THEME_MID_FILL_A : TILE_THEME_MID_FILL_B;
+            }
+
+            draw_tilemap(x, y, tile);
+        }
+    }
+
+    for(uint8_t y = 1u; y < (uint8_t)(TILES_DOWN - 1u); y++) {
+        for(uint8_t x = 1u; x < (uint8_t)(TILES_ACROSS - 1u); x++) {
+            uint8_t body_tile = (((x >> 1u) + y) & 1u) == 0u
+                ? TILE_THEME_BODY_A
+                : TILE_THEME_BODY_B;
+            draw_tilemap(x, y, body_tile);
+        }
+    }
+
+    draw_tilemap(2, 2, TILE_THEME_ACCENT);
+    draw_tilemap(17, 2, TILE_THEME_ACCENT);
+    draw_tilemap(2, 12, TILE_THEME_ACCENT);
+    draw_tilemap(17, 12, TILE_THEME_ACCENT);
+}
+
+static void clear_overlay_layer(void)
+{
+    fill_tilemap(TILE_COLOR_BLACK, 0, 0, TILES_ACROSS, TILES_DOWN);
+}
+
+static void draw_board_background_layer(void)
+{
+    fill_tilemap(TILE_COLOR_BLACK, 0, 0, TILES_ACROSS, TILES_DOWN);
+    draw_board_shell();
+    render_tilemap(0);
 }
 
 static bool bettor_is_busted(uint8_t bettor_index)
@@ -1255,11 +1305,12 @@ static void render_race_results_screen(void)
     char status_line[12];
 
     reset_layer_scrolls();
-    fill_tilemap(TILE_COLOR_BLACK, 0, 0, TILES_ACROSS, TILES_DOWN);
-    render_tilemap(1);
+    draw_board_background_layer();
+    clear_overlay_layer();
     text_reset_arena(TEXT_TILE_ARENA_BASE, TEXT_TILE_ARENA_LIMIT);
 
-    draw_board_shell(TILE_TRACK_DRY_CLEAR_0, "OFFICIAL RESULTS");
+    text_draw_strip_alloc(centered_strip_x("OFFICIAL RESULTS"), 2,
+        "OFFICIAL RESULTS", COL_YELLOW, COL_BLACK, 4, true);
     set_font(FONT_NICETY_BOLD);
     sprintf(line, "R%u  WIN %u",
         (unsigned)(game.session.current_race + 1u),
@@ -1305,7 +1356,7 @@ static void render_race_results_screen(void)
             COL_BLACK, 4, false);
     }
 
-    render_tilemap(0);
+    render_tilemap(1);
 }
 
 static void render_final_standings_screen(void)
@@ -1315,14 +1366,15 @@ static void render_final_standings_screen(void)
     uint8_t winner_index;
 
     reset_layer_scrolls();
-    fill_tilemap(TILE_COLOR_BLACK, 0, 0, TILES_ACROSS, TILES_DOWN);
-    render_tilemap(1);
+    draw_board_background_layer();
+    clear_overlay_layer();
     text_reset_arena(TEXT_TILE_ARENA_BASE, TEXT_TILE_ARENA_LIMIT);
 
     build_standings_order();
     winner_index = standings_order[0];
 
-    draw_board_shell(TILE_TRACK_DRY_CLEAR_0, "FINAL STANDINGS");
+    text_draw_strip_alloc(centered_strip_x("FINAL STANDINGS"), 2,
+        "FINAL STANDINGS", COL_YELLOW, COL_BLACK, 4, true);
     set_font(FONT_NICETY_BOLD);
 
     format_bettor_status(status_line, winner_index);
@@ -1353,7 +1405,7 @@ static void render_final_standings_screen(void)
 
     text_draw_strip_alloc(4, 13, "RACE 10 DONE  START", COL_WHITE, COL_BLACK, 4, true);
 
-    render_tilemap(0);
+    render_tilemap(1);
 }
 
 static void finish_race_and_show_results(void)
@@ -1615,7 +1667,7 @@ static uint8_t race_step_distance(uint8_t entry_index)
     return distance;
 }
 
-static void refresh_betting_text_blocks(void)
+static void update_betting_text_blocks(void)
 {
     struct RaceCard *race = &game.session.races[game.session.current_race];
     struct Bettor *bettor = &game.session.bettors[game.session.active_bettor];
@@ -1774,14 +1826,12 @@ static void refresh_betting_text_blocks(void)
     text_update_pair_block(&betting_help_block, help_top, help_bottom);
 }
 
-static void draw_template_screen(void)
+static void refresh_betting_text_blocks(void)
 {
     struct RaceCard *race = &game.session.races[game.session.current_race];
 
-    fill_tilemap(TILE_COLOR_BLACK, 0, 0, TILES_ACROSS, TILES_DOWN);
+    clear_overlay_layer();
     text_reset_arena(TEXT_TILE_ARENA_BASE, TEXT_TILE_ARENA_LIMIT);
-
-    draw_board_shell(surface_track_tile(race->surface), "ZEAL DOWNS");
 
     static const uint8_t prototype_track_row[] = {
         TILE_TRACK_DRY_GRANDSTAND_0,
@@ -1805,8 +1855,10 @@ static void draw_template_screen(void)
         TILE_TRACK_UTIL_POST_3,
         TILE_TRACK_UTIL_DRY_0,
     };
-    draw_tilemap_array(0, 11, (uint8_t *)prototype_track_row, sizeof(prototype_track_row));
 
+    draw_tilemap_array(0, 11, (uint8_t *)prototype_track_row, sizeof(prototype_track_row));
+    text_draw_strip_alloc(centered_strip_x("ZEAL DOWNS"), 2,
+        "ZEAL DOWNS", COL_YELLOW, COL_BLACK, 4, true);
     text_draw_strip_alloc(2, 5, "POST HORSE      ODDS", COL_LIGHT_GRAY, COL_BLACK, 4, true);
     text_init_pair_block(&betting_summary_block, 4, 2,
         BETTING_SUMMARY_SPAN, COL_WHITE, COL_BLACK);
@@ -1814,11 +1866,10 @@ static void draw_template_screen(void)
         BETTING_WAGER_SPAN, COL_LIGHT_GRAY, COL_BLACK);
     text_init_pair_block(&betting_help_block, 1, 13,
         BETTING_WAGER_SPAN, COL_LIGHT_GRAY, COL_BLACK);
-    refresh_betting_text_blocks();
+    update_betting_text_blocks();
 
     if(game.session.past_performance_active != 0u) {
         render_past_performance_rows();
-        render_tilemap(0);
         render_tilemap(1);
         return;
     }
@@ -1836,11 +1887,17 @@ static void draw_template_screen(void)
         sprintf(bank_line, "BANKROLL B%u $%u",
             (unsigned)(game.session.active_bettor + 1u),
             (unsigned)game.session.bettors[game.session.active_bettor].bankroll);
-        text_draw_strip_alloc(centered_strip_x(bank_line), 11, bank_line, COL_YELLOW, COL_BLACK, 4, true);
+        text_draw_strip_alloc(centered_strip_x(bank_line), 12, bank_line, COL_YELLOW, COL_BLACK, 4, true);
     }
 
-    render_tilemap(0);
     render_tilemap(1);
+}
+
+static void draw_template_screen(void)
+{
+    reset_layer_scrolls();
+    draw_board_background_layer();
+    refresh_betting_text_blocks();
 }
 
 void game_show_dialog(const char *text)
@@ -1851,9 +1908,8 @@ void game_show_dialog(const char *text)
 
 void resume_game(void)
 {
-    fill_tilemap(TILE_COLOR_BLACK, 0, 0, TILES_ACROSS, TILES_DOWN);
+    clear_overlay_layer();
     render_tilemap(1);
-    render_tilemap(0);
 
     draw_template_screen();
 }
