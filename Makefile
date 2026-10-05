@@ -7,7 +7,7 @@ DAT=bin/horser.dat
 CC=sdcc
 CFLAGS=-mz80 --std-c2x -c -I $(ZOS_PATH)/kernel_headers/sdcc/include/ -I $(ZVB_SDK_PATH)/include --codeseg TEXT --debug
 AS=sdasz80 -o -l -s
-OBJCOPY=sdobjcopy
+OBJCOPY ?= sdobjcopy
 LD=sdldz80
 LDFLAGS=-n -y -mjwx -i -b _HEADER=0x4000 -k $(ZOS_PATH)/kernel_headers/sdcc/lib -l z80 $(ZOS_LDFLAGS)
 ZOS_LIBS=-k $(ZVB_SDK_PATH)/lib -l zvb_sound -l zvb_gfx
@@ -35,7 +35,7 @@ obj/%.rel: src/%.asm
 	$(AS) $@ $<
 
 img/%.zts: img/%.gif
-	$(ZVB_SDK_PATH)/tools/zeal2gif/gif2zeal.py -l -i $<
+	$(ZVB_SDK_PATH)/tools/zeal2gif/gif2zeal.py -z lz -i $<
 
 img/accent.gif: tools/make_accent_gif.py img/hud.gif
 	python3 tools/make_accent_gif.py
@@ -46,7 +46,7 @@ src/level1.h: level/level1.tmx level/map.tsx level/title.tsx level/hud.tsx
 test-linux:
 	$(MAKE) -C tests/linux ROOT=../..
 
-obj/game.rel: src/game.c src/game.h src/main.h src/race_sim.h
+obj/game.rel: src/game.c src/game.h src/main.h src/game_betting.h src/game_race.h src/wager_math.h src/session_logic.h
 obj/game_ui.rel: src/game_ui.c src/game_ui.h src/game.h src/main.h src/text.h
 obj/game_results.rel: src/game_results.c src/game_results.h src/game.h src/game_ui.h src/main.h src/text.h src/wager_math.h
 obj/game_betting.rel: src/game_betting.c src/game_betting.h src/game.h src/game_ui.h src/main.h src/text.h

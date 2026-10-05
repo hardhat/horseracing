@@ -58,6 +58,9 @@ bool dat_open(void)
 {
     dat_fd = open("horser.dat", O_RDONLY);
     if (dat_fd < 0) {
+        dat_fd = open("h:/bin/horser.dat", O_RDONLY);
+    }
+    if (dat_fd < 0) {
         debug_log("dat: failed to open template asset pack (horser.dat)");
         return false;
     }

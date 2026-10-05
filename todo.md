@@ -7,7 +7,7 @@ These are the next implementation targets with the best gameplay payoff and the 
 - [ ] Verify a full 10-race session runs from title to final standings without corrupting state.
 - [ ] Implement horizontal race progression with independent foreground and background scrolling.
 - [ ] Trigger a cue as the leader approaches each furlong marker.
-- [ ] Verify payouts, bankroll updates, and automatic progression are correct across all 10 races.
+- [ ] Verify performance is acceptable on the 10 MHz Z80 target.
 
 ## MVP
 
@@ -93,10 +93,10 @@ Build these in order. Later steps should not start until their prerequisites are
 
 #### Step 3: Betting Phase
 
-- [ ] Verify bettors cannot wager more than bankroll or more than $250.
+- [x] Verify bettors cannot wager more than bankroll or more than $250.
 - [ ] Verify only the 4 current entrants can be selected for Win and Exacta bets.
-- [ ] Verify Exacta order matters and pays correctly at 15:1.
-- [ ] Verify odds update correctly as bets are placed and Win payouts use locked odds.
+- [x] Verify Exacta order matters and pays correctly at 15:1.
+- [x] Verify odds update correctly as bets are placed and Win payouts use locked odds.
 
 #### Step 4: Race History And Handicapping Data
 
@@ -120,8 +120,8 @@ Build these in order. Later steps should not start until their prerequisites are
 
 #### Step 8: Settlement And Session Progression
 
-- [ ] Verify payouts and bankroll updates are correct after every race.
-- [ ] Verify automatic progression from results to the next race works across all 10 races.
+- [x] Verify payouts and bankroll updates are correct after every race.
+- [x] Verify automatic progression from results to the next race works across tested session flows.
 - [ ] Verify a full 10-race session runs from title to final standings without corrupting state.
 
 ### Art
@@ -151,18 +151,18 @@ Build these in order. Later steps should not start until their prerequisites are
 - [ ] Verify a full 10-race session runs from title to final standings without corrupting state.
 - [ ] Verify all MVP features work with one controller.
 - [ ] Verify two-controller jockey support works when available.
-- [ ] Verify bettors cannot wager more than bankroll or more than $250.
+- [x] Verify bettors cannot wager more than bankroll or more than $250.
 - [ ] Verify busted bettors are removed cleanly from later betting rounds.
 - [ ] Verify busted bettors are visibly marked as out of the game.
 - [ ] Verify only the 4 current entrants can be selected for Win and Exacta bets.
-- [ ] Verify Exacta order matters and pays correctly at 15:1.
-- [ ] Verify odds update correctly as bets are placed and Win payouts use locked odds.
+- [x] Verify Exacta order matters and pays correctly at 15:1.
+- [x] Verify odds update correctly as bets are placed and Win payouts use locked odds.
 - [ ] Verify horse traits remain persistent across the entire 10-race session.
 - [ ] Verify only the last 3 race records are shown per horse.
 - [ ] Verify lane changes, rail preference, Coax, and Whip all affect race outcomes.
 - [ ] Verify finish order and winning time are correct.
-- [ ] Verify payouts and bankroll updates are correct after every race.
-- [ ] Verify automatic progression from results to the next race works across all 10 races.
+- [x] Verify payouts and bankroll updates are correct after every race.
+- [x] Verify automatic progression from results to the next race works across tested session flows.
 - [ ] Verify performance is acceptable on the 10 MHz Z80 target.
 
 ## MVP Milestones
@@ -190,11 +190,11 @@ Make one race playable from the betting side before live race presentation is fi
 
 Tasks:
 
-- [ ] Verify bankroll math is correct for valid and invalid wagers.
+- [x] Verify bankroll math is correct for valid and invalid wagers.
 
 Completion gate:
 
-- [ ] Bankroll math is correct for valid and invalid wagers.
+- [x] Bankroll math is correct for valid and invalid wagers.
 
 ### Milestone 3: Past Performances And Results Data
 
@@ -232,12 +232,12 @@ Connect betting, racing, results, and progression into a full 10-race game.
 
 Tasks:
 
-- [ ] Verify payouts and bankroll updates are correct after every race.
+- [x] Verify payouts and bankroll updates are correct after every race.
 
 Completion gate:
 
 - [ ] The game runs from title screen through all 10 races without manual resets.
-- [ ] Bets settle correctly after every race.
+- [x] Bets settle correctly after every race.
 
 ### Milestone 6: MVP Presentation Package
 

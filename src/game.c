@@ -7,10 +7,7 @@
 #include "game_betting.h"
 #include "game.h"
 #include "game_race.h"
-#include "game_results.h"
 #include "game_ui.h"
-#include "race_sim.h"
-#include "text.h"
 #include "wager_math.h"
 #include "session_logic.h"
 
